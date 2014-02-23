@@ -524,7 +524,7 @@ public class blah extends Scheduler {
          * @see nachos.threads.ThreadQueue#waitForAccess
          */
         public void waitForAccess(PriorityQueue waitQueue) {
-                
+        	
         	    Integer currPriority = new Integer(this.getEffectivePriority());
                 LinkedList<ThreadState> waitingTh = waitQueue.pQueue.get(currPriority);
                 if(waitingTh == null)
@@ -555,7 +555,10 @@ public class blah extends Scheduler {
                         threads.add(this);
                 }
             }
+            System.out.println(waitQueue.pQueue);
+            System.out.println("transferPriority="+waitQueue.transferPriority);
         }
+        
 
         /**
          * Called when the associated thread has acquired access to whatever resources (CPU...) is
