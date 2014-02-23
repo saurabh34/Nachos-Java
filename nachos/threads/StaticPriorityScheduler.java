@@ -137,27 +137,26 @@ public class StaticPriorityScheduler extends Scheduler {
 
 	public void acquire(KThread thread) {
 		Lib.assertTrue(Machine.interrupt().disabled());
-	     
-	    Lib.assertTrue(waitQueue.isEmpty());
+	    Lib.assertTrue(priorityWaitQueue.isEmpty());
 	    
 	}
 
 	public KThread nextThread() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    
-	    if (waitQueue.isEmpty())
+	    if (priorityWaitQueue.isEmpty())
 	    	return null;
-	    int highestKey=waitQueue.lastKey(); //get highest priority thread
+	    int highestKey=priorityWaitQueue.lastKey(); //get highest priority thread
 	    											
 	    											//remove highest priority thread 
 	    											//and if its only one remove the key also
-	    if (waitQueue.get(highestKey).size()==1){ 
-	    	KThread thread =waitQueue.get(highestKey).removeFirst();
-	    	waitQueue.remove(highestKey);
+	    if (priorityWaitQueue.get(highestKey).size()==1){ 
+	    	KThread thread =priorityWaitQueue.get(highestKey).removeFirst();
+	    	priorityWaitQueue.remove(highestKey);
 	    	return thread;
 	      }
 	    
-	    return waitQueue.get(highestKey).removeFirst();
+	    return priorityWaitQueue.get(highestKey).removeFirst();
 	    
 	    
 	}
@@ -171,10 +170,10 @@ public class StaticPriorityScheduler extends Scheduler {
 	 */
 	protected KThread pickNextThread() {
 		
-		 if (waitQueue.isEmpty())
+		 if (priorityWaitQueue.isEmpty())
 		    	return null;
-		 int highestKey=waitQueue.lastKey();
-		 return waitQueue.get(highestKey).getFirst();
+		 int highestKey=priorityWaitQueue.lastKey();
+		 return priorityWaitQueue.get(highestKey).getFirst();
 	}
 	
 	public void print() {
@@ -187,7 +186,8 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * threads to the owning thread.
 	 */
 	public boolean transferPriority;
-	TreeMap<Integer,LinkedList<KThread>> waitQueue=new TreeMap<Integer,LinkedList<KThread>>();
+	//create the priority queue
+	private TreeMap<Integer,LinkedList<KThread>> priorityWaitQueue=new TreeMap<Integer,LinkedList<KThread>>();
     }
 
     /**
@@ -266,15 +266,15 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @see	nachos.threads.ThreadQueue#nextThread
 	 */
 	
-	public void waitForAccess(PriorityQueue PwaitQueue) {
+	public void waitForAccess(PriorityQueue waitQueue) {
 		
-		if (!PwaitQueue.waitQueue.containsKey(this.priority)){
-			PwaitQueue.waitQueue.put(this.priority,new LinkedList<KThread>());
+		if (!waitQueue.priorityWaitQueue.containsKey(this.priority)){
+			waitQueue.priorityWaitQueue.put(this.priority,new LinkedList<KThread>());
 		    }
 		    	
-		PwaitQueue.waitQueue.get(this.priority).add(thread);
+		waitQueue.priorityWaitQueue.get(this.priority).add(thread);
 		    
-		System.out.println(PwaitQueue.waitQueue);
+		System.out.println(waitQueue.priorityWaitQueue);
 	}
 
 	/** The thread with which this object is associated. */	   
