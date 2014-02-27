@@ -48,13 +48,13 @@ public class DynamicPriorityScheduler extends Scheduler {
 		       
 	return getThreadState(thread).getPriority();
     }
-
+/*
     public int getEffectivePriority(KThread thread) {
 	Lib.assertTrue(Machine.interrupt().disabled());
 		       
 	return getThreadState(thread).getEffectivePriority();
     }
-
+*/
     public void setPriority(KThread thread, int priority) {
     
 	      
@@ -94,20 +94,45 @@ public class DynamicPriorityScheduler extends Scheduler {
 	Machine.interrupt().restore(intStatus);
 	return true;
     }
-
+ /*  
+    public static void writeLog(String data){
+		  try{//File file =new File("javaio-appendfile.txt");//if file doesn't exists, then create it
+	    		if(!file.exists()){
+	    			file.createNewFile();
+	    		}
+	     		//true = append file
+	    		    FileWriter fileWritter = new FileWriter(file.getName(),true);
+	    	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+	    	        bufferWritter.write(data);
+	    	        bufferWritter.close();
+	 	        System.out.println("Done");
+	 	    	}catch(IOException e){
+	    		e.printStackTrace();
+	    	}
+	 }
+    
+    public static File file = new File ("C:/dc/Project OS/Nachos-Java/DynamicPriorityScheduler.log");
+   */
+   public static void printLog(String data){
+	   System.out.println(data);
+   }
+    
+        
     /**
      * The default priority for a new thread. Do not change this value.
      */
-    public static final int priorityDefault = 1;
+    public static final int priorityDefault = 31;
     /**
      * The minimum priority that a thread can have. Do not change this value.
      */
-    public static final int priorityMinimum = 0;
+    public static final int priorityMinimum = 1;
     /**
      * The maximum priority that a thread can have. Do not change this value.
      */
-    public static final int priorityMaximum = 32;    
-
+    public static final int priorityMaximum = Integer.parseInt(Config.getString("scheduler.maxPriority")); 
+    public long timeInterval= Integer.parseInt(Config.getString("scheduler.agingTime"));
+    
+    
     /**
      * Return the scheduling state of the specified thread.
      *
@@ -149,15 +174,24 @@ public class DynamicPriorityScheduler extends Scheduler {
 	    	return null;
 	    }
 	    System.out.println("nextThreadforexecution "+maxPriorityThread.thread.getName());
-	   	long currentWaitTime=Machine.timer().getTime()-maxPriorityThread.startWaitTime;
-	    maxPriorityThread.soFarWaitTime=maxPriorityThread.soFarWaitTime+currentWaitTime;
-	    maxPriorityThread.startRunTime=Machine.timer().getTime();
+	 //  	long currentWaitTime=Machine.timer().getTime()-maxPriorityThread.thread.startWaitTime;
+	  //  maxPriorityThread.thread.soFarWaitTime=maxPriorityThread.thread.soFarWaitTime+currentWaitTime;
+	  //  maxPriorityThread.thread.startRunTime=Machine.timer().getTime();
 	    this.priorityWaitQueue.remove(maxPriorityThread);
-    	return maxPriorityThread.thread;
+	    recordScheduleInfo(maxPriorityThread);
+	    return maxPriorityThread.thread;
 	    
 	    
 	}
-
+	
+	public void recordScheduleInfo(ThreadState ThreadS ){
+		
+		long currentTime=Machine.timer().getTime();
+		String threadName=ThreadS.thread.getName();
+		int currentPriority=ThreadS.priority;
+		printLog(currentTime+","+threadName+","+currentPriority);
+	}
+	
 	/**
 	 * Return the next thread that <tt>nextThread()</tt> would return,
 	 * without modifying the state of this queue.
@@ -166,24 +200,26 @@ public class DynamicPriorityScheduler extends Scheduler {
 	 *		return.
 	 */
 	protected KThread pickNextThread() {
+		
 		return maxPriorityThread().thread;
 	}
 	
 	public ThreadState maxPriorityThread(){
+		System.out.println("#########Call for maxPrioritythread############");
 		ThreadState maxPriorityThread=null;
 		if (this.priorityWaitQueue.isEmpty()){
 			return null;
 		}
 		
-		int maxPriorityOfThread=priorityMinimum;
+		int maxPriorityOfThread=priorityMaximum;
 		int priority;
 		
 		   for (ThreadState threadState: this.priorityWaitQueue){
 			   priority=threadState.getEffectivePriority();
-			   if (priority> maxPriorityOfThread)
+			   if (priority<maxPriorityOfThread){
 				   maxPriorityThread=threadState;
 			       maxPriorityOfThread=priority;
-			       
+			   }
 		   }
 		 
 		return maxPriorityThread;
@@ -240,25 +276,38 @@ public class DynamicPriorityScheduler extends Scheduler {
 	 * @return	the effective priority of the associated thread.
 	 */
 	public int getEffectivePriority() {
-	long timeInterval=100; 
+	//long timeInterval=100; 
 	
-	long currentWaitTime=Machine.timer().getTime()-this.startWaitTime;
-	this.soFarWaitTime=currentWaitTime+this.soFarWaitTime;
-	int newPriority=(int)((this.soFarWaitTime-this.soFarRunTime)/timeInterval);
+	long currentWaitTime=Machine.timer().getTime()-this.thread.startWaitTime;
+	if (firstTime){
+		this.thread.soFarWaitTime=currentWaitTime;
+		firstTime=false;
+		this.recentlyAddedThread=false;
+	}else if (this.recentlyAddedThread){
+		this.lastWaitTimeForRun=this.thread.soFarWaitTime;
+		this.thread.soFarWaitTime=currentWaitTime+this.thread.soFarWaitTime;
+		this.recentlyAddedThread=false;
+	}else{
+		this.thread.soFarWaitTime=currentWaitTime+this.lastWaitTimeForRun;
+		this.lastWaitTimeForRun=0;
+	}
+	int newPriority=(int)((this.thread.soFarWaitTime-this.thread.soFarRunTime)/timeInterval);
 	   //System.out.println("######"+this.soFarWaitTime+" "+this.soFarRunTime+"  "+newPriority);
-		if (newPriority > priorityMaximum){
-			newPriority=priorityMaximum;
+	this.priority=this.priority-newPriority;
+	
+	if (this.priority > priorityMaximum){
+		this.priority=priorityMaximum;
 		}
-		if (newPriority < priorityMinimum){
-			newPriority=priorityMinimum;
+		if (this.priority < priorityMinimum){
+			this.priority=priorityMinimum;
 		}
-		this.priority=this.priority+newPriority;
-		System.out.println(this.thread.getName()+" priority:"+this.priority+"######"+this.soFarWaitTime+" "+this.soFarRunTime+"  ");
-		   try {
-		        System.in.read();
-		    } catch (IOException e) {
-		        e.printStackTrace();
-		    }
+		
+		System.out.println(this.thread.getName()+" priority:"+this.priority+"######"+this.thread.soFarWaitTime+" "+this.thread.soFarRunTime+"  ");
+		//   try {
+		  //      System.in.read();
+		   // } catch (IOException e) {
+		    //    e.printStackTrace();
+	//	    }
 		
 	    return this.priority;
 	}
@@ -302,15 +351,22 @@ public class DynamicPriorityScheduler extends Scheduler {
 	
 	public void waitForAccess(PriorityQueue waitQueue) {
 		
-		if (this.startRunTime>0){ //assuming thread don't go in IO blocking state
-			long currentRunTime=Machine.timer().getTime()-this.startRunTime;
-			this.soFarRunTime=this.soFarRunTime+currentRunTime;
+		if (this.thread.arrivalTime==0){
+			this.thread.arrivalTime=Machine.timer().getTime();
+		}
+		
+		if (this.thread.startRunTime>0){ //assuming thread don't go in IO blocking state
+			long currentRunTime=Machine.timer().getTime()-this.thread.startRunTime;
+			this.thread.soFarRunTime=this.thread.soFarRunTime+currentRunTime;
 		}
 		
 		waitQueue.priorityWaitQueue.add(this);
-		this.startWaitTime=Machine.timer().getTime();
+		System.out.println("thread added="+this.thread.getName()+"thread priority="+this.priority);
+		this.recentlyAddedThread=true;
+		this.thread.startWaitTime=Machine.timer().getTime();
+		
 		for(ThreadState threadS: waitQueue.priorityWaitQueue)
-			System.out.println("********"+threadS.thread);
+			System.out.println("All thread here********"+"thread="+threadS.thread.getName()+"thread priority="+threadS.priority);
 		
 	}
 
@@ -318,12 +374,15 @@ public class DynamicPriorityScheduler extends Scheduler {
 	protected KThread thread;
 	/** The priority of the associated thread. */
 	protected int priority;
-	private long soFarWaitTime=0;
-    private long soFarRunTime=0;
-    private long startWaitTime=0;
-    private long startRunTime=0;
-    
-  
+	public boolean recentlyAddedThread=false; 
+	public long lastWaitTimeForRun=0;
+	public boolean firstTime=true;
+	//private long soFarWaitTime=0;
+    //private long soFarRunTime=0;
+    //private long startWaitTime=0;
+    //private long startRunTime=0;
+    //private long arrivalTime=0;
+   // private long DepartureTime=0;
     	
     	
     }

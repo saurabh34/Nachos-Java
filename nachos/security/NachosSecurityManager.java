@@ -245,7 +245,7 @@ public class NachosSecurityManager extends SecurityManager {
 	    }
 	    else if (perm.getActions().equals("write") ||
 		     perm.getActions().equals("delete")) {
-		// only allowed to write test diretory, and only with privilege
+		// only allowed to write test directory, and only with privilege
 		verifyPrivilege();
 
 		try {

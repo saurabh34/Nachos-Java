@@ -195,6 +195,10 @@ public class KThread {
 
 	currentThread.status = statusFinished;
 	
+	long currentRunTime=Machine.timer().getTime()-currentThread.startRunTime;
+	currentThread.soFarRunTime=currentThread.soFarRunTime+currentRunTime;
+	currentThread.DepartureTime=Machine.timer().getTime();
+	DynamicPriorityScheduler.printLog(currentThread.getName()+","+currentThread.arrivalTime+","+currentThread.soFarRunTime+","+currentThread.soFarWaitTime+","+currentThread.DepartureTime);
 	sleep();
     }
 
@@ -246,7 +250,8 @@ public class KThread {
 
 	if (currentThread.status != statusFinished)
 	    currentThread.status = statusBlocked;
-
+	
+	
 	runNextThread();
     }
 
@@ -357,6 +362,7 @@ public class KThread {
      */
     protected void restoreState() {
 	Lib.debug(dbgThread, "Running thread: " + currentThread.toString());
+	currentThread.startRunTime=Machine.timer().getTime();
 	
 	Lib.assertTrue(Machine.interrupt().disabled());
 	Lib.assertTrue(this == currentThread);
@@ -365,7 +371,7 @@ public class KThread {
 	Machine.autoGrader().runningThread(this);
 	
 	status = statusRunning;
-
+    
 	if (toBeDestroyed != null) {
 	    toBeDestroyed.tcb.destroy();
 	    toBeDestroyed.tcb = null;
@@ -407,38 +413,42 @@ public class KThread {
         // high runs and waits for med to release a sema4
         // once the sema4 is released, when both high and low are
         // in the ready state, high will run before low
-        Semaphore s     = new Semaphore(0);
-        KThread low     = new KThread(new LowPriorityThread()).setName("Low1");
-        KThread med     = new KThread(new MediumPriorityThread(s)).setName("Med1");
-        KThread high    = new KThread(new HighPriorityThread(s)).setName("High1");
+      //  Semaphore s     = new Semaphore(0);
+    
+    	KThread low     = new KThread(new LowPriorityThread()).setName("Low1");
+        KThread med     = new KThread(new MediumPriorityThread()).setName("Med1");
+        KThread high    = new KThread(new HighPriorityThread()).setName("High1");
+       
        
        
         boolean oldInterrupStatus = Machine.interrupt().disable();
-        ThreadedKernel.scheduler.setPriority(low, 1);
-        ThreadedKernel.scheduler.setPriority(med, 2);
-        ThreadedKernel.scheduler.setPriority(high, 3);
-                Machine.interrupt().restore(oldInterrupStatus);
+        ThreadedKernel.scheduler.setPriority(low, 3);
+        ThreadedKernel.scheduler.setPriority(med, 1);
+        ThreadedKernel.scheduler.setPriority(high, 1);
+        Machine.interrupt().restore(oldInterrupStatus);
 
         high.fork();
         med.fork();
         low.fork();
-       
-        low.join();
+     //  low.yield();
+      //  currentThread.yield();
+      //low.join();
+    
        
         // Test 2 - priority inversion
         // We have 3 threads t1 t2 t3 with priorities 1, 2, 3 respectively
-        // t3 waits on a sema4, then t1 starts running wakes t2 then yields
+        // t3 waits on a sema4, then t1 	 running wakes t2 then yields
         // now t2 is running and if t1 doesn't get a donation it won't release t3
-       
+      /*
         Semaphore s1    = new Semaphore(0);
         KThread t1      = new KThread(new T1(s1)).setName("T1");
         KThread t2      = new KThread(new T2()).setName("T2");
         KThread t3      = new KThread(new T3(s1)).setName("T3");
        
         oldInterrupStatus = Machine.interrupt().disable();
-        ThreadedKernel.scheduler.setPriority(t1, 1);
+        ThreadedKernel.scheduler.setPriority(t3, 1);
         ThreadedKernel.scheduler.setPriority(t2, 2);
-        ThreadedKernel.scheduler.setPriority(t3, 3);
+        ThreadedKernel.scheduler.setPriority(t1, 3);
         Machine.interrupt().restore(oldInterrupStatus);
                
                 t1.fork();
@@ -448,6 +458,10 @@ public class KThread {
                 t1.join();
                 t2.join();
                 t3.join();
+       
+        */
+        currentThread.yield();
+    
     }
 
     
@@ -455,42 +469,56 @@ public class KThread {
     
     private static class HighPriorityThread implements Runnable
     {
-        HighPriorityThread(Semaphore sema4)
-        {
-                this.sema4 = sema4;
-        }
-        public void run()
-        {
+       // HighPriorityThread(Semaphore sema4)
+        //{
+               // this.sema4 = sema4;
+        //}
+        
+    	
+    	public void run()
+        {     
+    		for(int j=0;j<5;j++){
                 for(int i = 0; i < 60; ++i)
                 {
-                        Lib.debug(dbgThread, "$$$ HighPriorityThread running, i = " + i);
+                      Lib.debug(dbgThread, "$$$ HighPriorityThread running, i = " + i);
+                      
                 }
-                // wait for someone else to release the sema4
-                Lib.debug(dbgThread, "$$$ HighPriorityThread - before Semaphore.P()");
-                sema4.P();
-                Lib.debug(dbgThread, "$$$ HighPriorityThread - after Semaphore.P()");
+          //     boolean oldInterrupStatus = Machine.interrupt().disable();
+               KThread.currentThread.yield();
+             //  Machine.interrupt().restore(oldInterrupStatus);
+               
+             
+          
         }
-        private Semaphore sema4;
+                // wait for someone else to release the sema4
+              //  Lib.debug(dbgThread, "$$$ HighPriorityThread - before Semaphore.P()");
+               // sema4.P();
+               // Lib.debug(dbgThread, "$$$ HighPriorityThread - after Semaphore.P()");
+        }
+       // private Semaphore sema4;
     }
    
     private static class MediumPriorityThread implements Runnable
     {
-        MediumPriorityThread(Semaphore sema4)
-        {
-                this.sema4 = sema4;
-        }
+        //MediumPriorityThread(Semaphore sema4)
+        //{
+         //       this.sema4 = sema4;
+        //}
         public void run()
         {
                 // release the sema4
-                Lib.debug(dbgThread, "$$$ MediumPriorityThread before Semaphore.V()");
-                sema4.V();
-                Lib.debug(dbgThread, "$$$ MediumPriorityThread after Semaphore.V()");
-                for(int i = 0; i < 50; ++i)
+              //  Lib.debug(dbgThread, "$$$ MediumPriorityThread before Semaphore.V()");
+          //      sema4.V();
+               // Lib.debug(dbgThread, "$$$ MediumPriorityThread after Semaphore.V()");
+            for (int j=0;j<10;j++) {   
+        	for(int i = 0; i < 10; ++i)
                 {
                         Lib.debug(dbgThread, "$$$ MediumPriorityThread running, i = " + i);
                 }
-        }
-        private Semaphore sema4;
+            KThread.currentThread.yield();
+            }
+         }
+        //private Semaphore sema4;
     }
    
     private static class LowPriorityThread implements Runnable
@@ -589,7 +617,15 @@ public class KThread {
     private static final int statusRunning = 2;
     private static final int statusBlocked = 3;
     private static final int statusFinished = 4;
-
+  //  public long arrivalTime=0;
+    public long DepartureTime=0;
+    public long soFarWaitTime=0;
+    public long soFarRunTime=0;
+    public long startWaitTime=0;
+    public long startRunTime=0;
+    public long arrivalTime=0;
+   
+    
     /**
      * The status of this thread. A thread can either be new (not yet forked),
      * ready (on the ready queue but not running), running, or blocked (not
@@ -608,7 +644,7 @@ public class KThread {
     private int id = numCreated++;
     /** Number of times the KThread constructor was called. */
     private static int numCreated = 0;
-
+ 
     private static ThreadQueue readyQueue = null;
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
