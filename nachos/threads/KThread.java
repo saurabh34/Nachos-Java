@@ -209,6 +209,11 @@ public class KThread {
 		StaticPriorityScheduler.threadsWaitingTime.add(currentThread.soFarWaitTime);
 		StaticPriorityScheduler.threadsTurnAroundTime.add(currentThread.DepartureTime-currentThread.arrivalTime);
 	} 
+	if (schedulerName.equals("nachos.threads.MultiLevelScheduler")){
+		MultiLevelScheduler.printLog(currentThread.getName()+","+currentThread.arrivalTime+","+currentThread.soFarRunTime+","+currentThread.soFarWaitTime+","+currentThread.DepartureTime);
+		MultiLevelScheduler.threadsWaitingTime.add(currentThread.soFarWaitTime);
+		MultiLevelScheduler.threadsTurnAroundTime.add(currentThread.DepartureTime-currentThread.arrivalTime);
+	} 
 	
 	sleep();
     }
@@ -439,9 +444,9 @@ public class KThread {
        
        
         boolean oldInterrupStatus = Machine.interrupt().disable();
-        ThreadedKernel.scheduler.setPriority(low, 3);
-        ThreadedKernel.scheduler.setPriority(med, 2);
-        ThreadedKernel.scheduler.setPriority(high, 1);
+        ThreadedKernel.scheduler.setPriority(low, 25);
+        ThreadedKernel.scheduler.setPriority(med, 15);
+        ThreadedKernel.scheduler.setPriority(high, 5);
         ThreadedKernel.scheduler.setPriority(high2, 4);
         Machine.interrupt().restore(oldInterrupStatus);
       

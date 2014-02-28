@@ -121,7 +121,7 @@ public class DynamicPriorityScheduler extends Scheduler {
     /**
      * The default priority for a new thread. Do not change this value.
      */
-    public static final int priorityDefault = 31;
+    public static final int priorityDefault = Integer.parseInt(Config.getString("scheduler.maxPriority"));
     /**
      * The minimum priority that a thread can have. Do not change this value.
      */

@@ -3,7 +3,7 @@ package nachos.threads;
 import nachos.machine.*;
 
 import java.util.*;
-
+import java.io.*;
 /**
  * A scheduler that chooses threads based on their priorities.
  *
@@ -24,11 +24,11 @@ import java.util.*;
  * A priority scheduler must partially solve the priority inversion problem; in
  * particular, priority must be donated through locks, and through joins.
  */
-public class StaticPriorityScheduler extends Scheduler {
+public class MultiLevelScheduler extends Scheduler {
     /**
      * Allocate a new priority scheduler.
      */
-    public StaticPriorityScheduler() {
+    public MultiLevelScheduler() {
     }
     
     /**
@@ -48,13 +48,13 @@ public class StaticPriorityScheduler extends Scheduler {
 		       
 	return getThreadState(thread).getPriority();
     }
-
+/*
     public int getEffectivePriority(KThread thread) {
 	Lib.assertTrue(Machine.interrupt().disabled());
 		       
 	return getThreadState(thread).getEffectivePriority();
     }
-
+*/
     public void setPriority(KThread thread, int priority) {
     
 	      
@@ -94,11 +94,30 @@ public class StaticPriorityScheduler extends Scheduler {
 	Machine.interrupt().restore(intStatus);
 	return true;
     }
+ /*  
+    public static void writeLog(String data){
+		  try{//File file =new File("javaio-appendfile.txt");//if file doesn't exists, then create it
+	    		if(!file.exists()){
+	    			file.createNewFile();
+	    		}
+	     		//true = append file
+	    		    FileWriter fileWritter = new FileWriter(file.getName(),true);
+	    	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+	    	        bufferWritter.write(data);
+	    	        bufferWritter.close();
+	 	        System.out.println("Done");
+	 	    	}catch(IOException e){
+	    		e.printStackTrace();
+	    	}
+	 }
     
-    public static void printLog(String data){
- 	   System.out.println(data);
-    }
-     
+    public static File file = new File ("C:/dc/Project OS/Nachos-Java/DynamicPriorityScheduler.log");
+   */
+   public static void printLog(String data){
+	   System.out.println(data);
+   }
+    
+        
     /**
      * The default priority for a new thread. Do not change this value.
      */
@@ -110,7 +129,8 @@ public class StaticPriorityScheduler extends Scheduler {
     /**
      * The maximum priority that a thread can have. Do not change this value.
      */
-    public static final int priorityMaximum = Integer.parseInt(Config.getString("scheduler.maxPriority"));    
+    public static final int priorityMaximum = Integer.parseInt(Config.getString("scheduler.maxPriority")); 
+    public long agingTime= Integer.parseInt(Config.getString("scheduler.agingTime"));
     public static ArrayList<Long> threadsWaitingTime=new  ArrayList<Long>();
     public static ArrayList<Long> threadsTurnAroundTime=new  ArrayList<Long>();
     /**
@@ -142,62 +162,59 @@ public class StaticPriorityScheduler extends Scheduler {
 
 	public void acquire(KThread thread) {
 		Lib.assertTrue(Machine.interrupt().disabled());
-	    Lib.assertTrue(priorityWaitQueue.isEmpty());
+	  //  Lib.assertTrue(priorityWaitQueue.isEmpty());
 	    
 	}
 
 	public KThread nextThread() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
-	    
-	    if (priorityWaitQueue.isEmpty())
-	    	return null;
-	    int highestKey=priorityWaitQueue.firstKey(); //get highest priority thread
-	    
-	    
-	    //remove highest priority thread and if its only one, remove the key also
-	    if (priorityWaitQueue.get(highestKey).size()==1){ 
-	    	KThread thread =priorityWaitQueue.get(highestKey).removeFirst();
-	    	priorityWaitQueue.remove(highestKey);
+	    rearrangeThreads();
+	    if (!this.topQueue.isEmpty()){
+	    	ThreadState maxPrioritythreadS=this.topQueue.getFirst();
+			this.topQueue.removeFirst();
 	    	
-	    	long currentWaitTime=Machine.timer().getTime()-thread.startWaitTime;
-	    	thread.soFarWaitTime=currentWaitTime+thread.lastWaitTimeForRun;
-	    	if (thread.getName()=="main" && this.priorityWaitQueue.isEmpty()){
-		    	printSystemStats();
-		    }
-	    	return thread;
-	      }
+	       if (maxPrioritythreadS.thread.getName().equals("main") && this.topQueue.isEmpty() && this.middleQueue.isEmpty() && this.bottomQueue.isEmpty() ){
+			    	printSystemStats();
+			    }
+	       recordScheduleInfo(maxPrioritythreadS);
+	       System.out.println("nextThreadforexecution "+maxPrioritythreadS.thread.getName());
+	       return maxPrioritythreadS.thread;
+		}
+		if (!this.middleQueue.isEmpty()){
+			ThreadState maxPrioritythreadS=this.middleQueue.getFirst();
+			this.middleQueue.removeFirst();
+	    	
+	       if (maxPrioritythreadS.thread.getName().equals("main") && this.topQueue.isEmpty() && this.middleQueue.isEmpty() && this.bottomQueue.isEmpty()){
+			    	printSystemStats();
+			    }
+	       recordScheduleInfo(maxPrioritythreadS);
+	       System.out.println("nextThreadforexecution "+maxPrioritythreadS.thread.getName());
+	       return maxPrioritythreadS.thread;
+		}
+		if (!this.bottomQueue.isEmpty()){
+			ThreadState maxPrioritythreadS=this.bottomQueue.getFirst();
+			this.bottomQueue.removeFirst();
+	    	
+	       if (maxPrioritythreadS.thread.getName().equals("main") && this.topQueue.isEmpty() && this.middleQueue.isEmpty() && this.bottomQueue.isEmpty()){
+			    	printSystemStats();
+			    }
+	       recordScheduleInfo(maxPrioritythreadS);
+	       System.out.println("nextThreadforexecution "+maxPrioritythreadS.thread.getName());
+	       return maxPrioritythreadS.thread;
+		}
 	    
-	    KThread thread =priorityWaitQueue.get(highestKey).removeFirst();
-	    long currentWaitTime=Machine.timer().getTime()-thread.startWaitTime;
-    	thread.soFarWaitTime=currentWaitTime+thread.lastWaitTimeForRun;
-    	
-        if (thread.getName()=="main" && this.priorityWaitQueue.isEmpty()){
-	    	printSystemStats();
-	    }
-    	
-	    return thread;
+	      
+	    return null;
 	    
 	    
-	}
-
-	/**
-	 * Return the next thread that <tt>nextThread()</tt> would return,
-	 * without modifying the state of this queue.
-	 *
-	 * @return	the next thread that <tt>nextThread()</tt> would
-	 *		return.
-	 */
-	protected KThread pickNextThread() {
-		
-		 if (priorityWaitQueue.isEmpty())
-		    	return null;
-		 int highestKey=priorityWaitQueue.firstKey();
-		 return priorityWaitQueue.get(highestKey).getFirst();
 	}
 	
-	public void print() {
-	    Lib.assertTrue(Machine.interrupt().disabled());
-	    // implement me (if you want)
+	public void recordScheduleInfo(ThreadState ThreadS ){
+		
+		long currentTime=Machine.timer().getTime();
+		String threadName=ThreadS.thread.getName();
+		int currentPriority=ThreadS.priority;
+		printLog(currentTime+","+threadName+","+currentPriority);
 	}
 	
 	public void printSystemStats(){
@@ -216,17 +233,95 @@ public class StaticPriorityScheduler extends Scheduler {
 	avgWaitTime=(int)(avgWaitTime/totalThreads);
 	avgTurnTime=(int)(avgTurnTime/totalThreads);
 	
-	StaticPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
+	MultiLevelScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
 	}
 	
+	 
+	
+	/**
+	 * Return the next thread that <tt>nextThread()</tt> would return,
+	 * without modifying the state of this queue.
+	 *
+	 * @return	the next thread that <tt>nextThread()</tt> would
+	 *		return.
+	 */
+	protected KThread pickNextThread() {
+		if (!this.topQueue.isEmpty()){
+			return this.topQueue.getFirst().thread;
+		}
+		if (!this.middleQueue.isEmpty()){
+			return this.middleQueue.getFirst().thread;
+		}
+		if (!this.bottomQueue.isEmpty()){
+			return this.bottomQueue.getFirst().thread;
+		}
+		
+		return null;
+	}
+	
+	public void rearrangeThreads(){
+		System.out.println("#########Call for rearrangeThreads############");
+		int priority;
+		
+		   for (ThreadState threadState: this.bottomQueue){
+			   priority=threadState.getEffectivePriority();
+			   if (priority<=20 && priority >= 11 ){
+				   this.bottomQueue.remove(threadState);
+				   this.middleQueue.add(threadState);
+			   }else if (priority <=10 ){
+				   this.bottomQueue.remove(threadState);
+				   this.middleQueue.add(threadState);
+			   }
+		   }
+		 
+		   
+		   for (ThreadState threadState: this.middleQueue){
+			   priority=threadState.getEffectivePriority();
+			   if (priority<=10 ){
+				   this.middleQueue.remove(threadState);
+				   this.topQueue.add(threadState);
+			   }else if (priority >20 ){
+				   this.middleQueue.remove(threadState);
+				   this.bottomQueue.add(threadState);
+			   }
+		   }
+		   
+		   for (ThreadState threadState: this.topQueue){
+			   priority=threadState.getEffectivePriority();
+			   if (priority<=20 && priority >=11 ){
+				   this.topQueue.remove(threadState);
+				   this.middleQueue.add(threadState);
+			   }else if (priority >20 ){
+				   this.topQueue.remove(threadState);
+				   this.bottomQueue.add(threadState);
+			   }
+		   }
+	
+		   for(ThreadState threadS: this.topQueue)
+				System.out.println("All thread here in top "+"thread="+threadS.thread.getName()+" thread priority="+threadS.priority);
+			for(ThreadState threadS: this.middleQueue)
+				System.out.println("All thread here in middle "+"thread="+threadS.thread.getName()+" thread priority="+threadS.priority);
+			for(ThreadState threadS: this.bottomQueue)
+				System.out.println("All thread here in bottom "+"thread="+threadS.thread.getName()+" thread priority="+threadS.priority);
+		
+		   
+	}
+	
+	
+	
+	public void print() {
+	    Lib.assertTrue(Machine.interrupt().disabled());
+	    // implement me (if you want)
+	}
 
 	/**
 	 * <tt>true</tt> if this queue should transfer priority from waiting
 	 * threads to the owning thread.
 	 */
 	public boolean transferPriority;
-	//create the priority queue
-	private TreeMap<Integer,LinkedList<KThread>> priorityWaitQueue=new TreeMap<Integer,LinkedList<KThread>>();
+	private LinkedList<ThreadState> topQueue =new LinkedList<ThreadState>();
+	private LinkedList<ThreadState> middleQueue =new LinkedList<ThreadState>();
+	private LinkedList<ThreadState> bottomQueue =new LinkedList<ThreadState>();
     }
 
     /**
@@ -264,8 +359,23 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @return	the effective priority of the associated thread.
 	 */
 	public int getEffectivePriority() {
-	   
-	    return priority;
+	
+	
+	long currentWaitTime=Machine.timer().getTime()-this.thread.startWaitTime;
+	this.thread.soFarWaitTime=currentWaitTime+this.thread.lastWaitTimeForRun;
+	
+	int newIncreasePriority=(int)((this.thread.soFarWaitTime-this.thread.soFarRunTime)/agingTime);
+	this.priority=this.priority-newIncreasePriority;
+	
+	if (this.priority > priorityMaximum){
+		this.priority=priorityMaximum;
+		}
+		if (this.priority < priorityMinimum){
+			this.priority=priorityMinimum;
+		}
+		
+		System.out.println(this.thread.getName()+" priority:"+this.priority+"######"+this.thread.soFarWaitTime+" "+this.thread.soFarRunTime+"  ");
+	    return this.priority;
 	}
 
 	/**
@@ -316,26 +426,34 @@ public class StaticPriorityScheduler extends Scheduler {
 			this.thread.soFarRunTime=this.thread.soFarRunTime+currentRunTime;
 		}
 		
+		if ( this.priority >=1  && this.priority <=10)
+				waitQueue.topQueue.add(this);
+		if ( this.priority >=11  && this.priority <=20)
+			waitQueue.middleQueue.add(this);
+		if ( this.priority >20)
+			waitQueue.bottomQueue.add(this);
 		
-		//add thread in TreeMap according to their priority
-		if (!waitQueue.priorityWaitQueue.containsKey(this.priority)){ //check priority level exist or not
-			waitQueue.priorityWaitQueue.put(this.priority,new LinkedList<KThread>()); //else create one
-		    }
-		    	
-		waitQueue.priorityWaitQueue.get(this.priority).add(thread); //add thread at that priority level
-		
+		System.out.println("thread added="+this.thread.getName()+" thread priority="+this.priority);
 		this.thread.startWaitTime=Machine.timer().getTime();
-				
-		System.out.println(waitQueue.priorityWaitQueue);
+		
+		for(ThreadState threadS: waitQueue.topQueue)
+			System.out.println("*********All thread here top "+"thread="+threadS.thread.getName()+"thread priority="+threadS.priority);
+		for(ThreadState threadS: waitQueue.middleQueue)
+			System.out.println("*********All thread here middle "+"thread="+threadS.thread.getName()+"thread priority="+threadS.priority);
+		for(ThreadState threadS: waitQueue.bottomQueue)
+			System.out.println("*********All thread here bottom "+"thread="+threadS.thread.getName()+"thread priority="+threadS.priority);
 	}
 
 	/** The thread with which this object is associated. */	   
 	protected KThread thread;
 	/** The priority of the associated thread. */
 	protected int priority;
+	
+
+    	
     }
     
-   
-    
-    
 }
+
+
+
