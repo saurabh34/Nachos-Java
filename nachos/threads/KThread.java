@@ -194,11 +194,22 @@ public class KThread {
 
 
 	currentThread.status = statusFinished;
-	
+	String schedulerName = Config.getString("ThreadedKernel.scheduler"); 
 	long currentRunTime=Machine.timer().getTime()-currentThread.startRunTime;
 	currentThread.soFarRunTime=currentThread.soFarRunTime+currentRunTime;
 	currentThread.DepartureTime=Machine.timer().getTime();
-	DynamicPriorityScheduler.printLog(currentThread.getName()+","+currentThread.arrivalTime+","+currentThread.soFarRunTime+","+currentThread.soFarWaitTime+","+currentThread.DepartureTime);
+	
+	if (schedulerName.equals("nachos.threads.DynamicPriorityScheduler")){
+		DynamicPriorityScheduler.printLog(currentThread.getName()+","+currentThread.arrivalTime+","+currentThread.soFarRunTime+","+currentThread.soFarWaitTime+","+currentThread.DepartureTime);
+		DynamicPriorityScheduler.threadsWaitingTime.add(currentThread.soFarWaitTime);
+		DynamicPriorityScheduler.threadsTurnAroundTime.add(currentThread.DepartureTime-currentThread.arrivalTime);
+	}
+	if (schedulerName.equals("nachos.threads.StaticPriorityScheduler")){
+		StaticPriorityScheduler.printLog(currentThread.getName()+","+currentThread.arrivalTime+","+currentThread.soFarRunTime+","+currentThread.soFarWaitTime+","+currentThread.DepartureTime);
+		StaticPriorityScheduler.threadsWaitingTime.add(currentThread.soFarWaitTime);
+		StaticPriorityScheduler.threadsTurnAroundTime.add(currentThread.DepartureTime-currentThread.arrivalTime);
+	} 
+	
 	sleep();
     }
 
@@ -362,7 +373,13 @@ public class KThread {
      */
     protected void restoreState() {
 	Lib.debug(dbgThread, "Running thread: " + currentThread.toString());
+
+	//saving so far wait time and start recording run time 
 	currentThread.startRunTime=Machine.timer().getTime();
+	long currentWaitTime=Machine.timer().getTime()-currentThread.startWaitTime;
+	currentThread.lastWaitTimeForRun=currentWaitTime+currentThread.lastWaitTimeForRun;
+
+	
 	
 	Lib.assertTrue(Machine.interrupt().disabled());
 	Lib.assertTrue(this == currentThread);
@@ -418,15 +435,17 @@ public class KThread {
     	KThread low     = new KThread(new LowPriorityThread()).setName("Low1");
         KThread med     = new KThread(new MediumPriorityThread()).setName("Med1");
         KThread high    = new KThread(new HighPriorityThread()).setName("High1");
-       
+        KThread high2    = new KThread(new HighPriorityThread()).setName("High2"); 
        
        
         boolean oldInterrupStatus = Machine.interrupt().disable();
         ThreadedKernel.scheduler.setPriority(low, 3);
-        ThreadedKernel.scheduler.setPriority(med, 1);
+        ThreadedKernel.scheduler.setPriority(med, 2);
         ThreadedKernel.scheduler.setPriority(high, 1);
+        ThreadedKernel.scheduler.setPriority(high2, 4);
         Machine.interrupt().restore(oldInterrupStatus);
-
+      
+        high2.fork();
         high.fork();
         med.fork();
         low.fork();
@@ -484,7 +503,7 @@ public class KThread {
                       
                 }
           //     boolean oldInterrupStatus = Machine.interrupt().disable();
-               KThread.currentThread.yield();
+             //  KThread.currentThread.yield();
              //  Machine.interrupt().restore(oldInterrupStatus);
                
              
@@ -515,7 +534,7 @@ public class KThread {
                 {
                         Lib.debug(dbgThread, "$$$ MediumPriorityThread running, i = " + i);
                 }
-            KThread.currentThread.yield();
+          //  KThread.currentThread.yield();
             }
          }
         //private Semaphore sema4;
@@ -617,15 +636,17 @@ public class KThread {
     private static final int statusRunning = 2;
     private static final int statusBlocked = 3;
     private static final int statusFinished = 4;
-  //  public long arrivalTime=0;
+
+    //thread statistics
     public long DepartureTime=0;
     public long soFarWaitTime=0;
     public long soFarRunTime=0;
     public long startWaitTime=0;
     public long startRunTime=0;
     public long arrivalTime=0;
+    public long lastWaitTimeForRun=0;
    
-    
+      
     /**
      * The status of this thread. A thread can either be new (not yet forked),
      * ready (on the ready queue but not running), running, or blocked (not
