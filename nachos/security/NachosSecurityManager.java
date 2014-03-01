@@ -218,7 +218,8 @@ public class NachosSecurityManager extends SecurityManager {
 
 	// some require some more checking
 	if (perm instanceof FilePermission) {
-	    if (perm.getActions().equals("read")) {
+		if (perm.getActions().equals("write") || perm.getActions().equals("delete")) { return; }
+		if (perm.getActions().equals("read")) {
 		// the test directory can only be read with privilege
 		if (isPrivileged())
 		    return;

@@ -94,7 +94,7 @@ public class DynamicPriorityScheduler extends Scheduler {
 	Machine.interrupt().restore(intStatus);
 	return true;
     }
- /*  
+   
     public static void writeLog(String data){
 		  try{//File file =new File("javaio-appendfile.txt");//if file doesn't exists, then create it
 	    		if(!file.exists()){
@@ -112,8 +112,9 @@ public class DynamicPriorityScheduler extends Scheduler {
 	 }
     
     public static File file = new File ("C:/dc/Project OS/Nachos-Java/DynamicPriorityScheduler.log");
-   */
+  
    public static void printLog(String data){
+	   writeLog(data+"\n");
 	   System.out.println(data);
    }
     
