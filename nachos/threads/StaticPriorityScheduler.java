@@ -1,7 +1,12 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.threads.MultiLevelScheduler.ThreadState;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -45,29 +50,29 @@ public class StaticPriorityScheduler extends Scheduler {
 
     public int getPriority(KThread thread) {
 	Lib.assertTrue(Machine.interrupt().disabled());
-		       
+
 	return getThreadState(thread).getPriority();
     }
 
     public int getEffectivePriority(KThread thread) {
 	Lib.assertTrue(Machine.interrupt().disabled());
-		       
+
 	return getThreadState(thread).getEffectivePriority();
     }
 
     public void setPriority(KThread thread, int priority) {
     
-	      
+
 	Lib.assertTrue(priority >= priorityMinimum &&
 		   priority <= priorityMaximum);
-	
+
 	getThreadState(thread).setPriority(priority);
-	
+
     }
 
     public boolean increasePriority() {
 	boolean intStatus = Machine.interrupt().disable();
-		       
+
 	KThread thread = KThread.currentThread();
 
 	int priority = getPriority(thread);
@@ -82,7 +87,7 @@ public class StaticPriorityScheduler extends Scheduler {
 
     public boolean decreasePriority() {
 	boolean intStatus = Machine.interrupt().disable();
-		       
+
 	KThread thread = KThread.currentThread();
 
 	int priority = getPriority(thread);
@@ -95,8 +100,42 @@ public class StaticPriorityScheduler extends Scheduler {
 	return true;
     }
     
+    public static void writeLog(String data){
+		System.out.println("dumping in log file");
+	  try{  File file = new File (inp_file);
+    		if(!file.exists()){
+    			file.createNewFile();
+    			
+    		}
+    		if (openFileFirstTime){
+    			FileWriter fileWritter = new FileWriter(file.getName());
+    	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+    	        bufferWritter.write("Starting clock Time (Baseline in milliseconds)= "+SystemTime.baslineTime+"\n");
+    	        bufferWritter.close();
+    			openFileFirstTime=false;
+    		}
+     		//true = append file
+    		    FileWriter fileWritter = new FileWriter(file.getName(),true);
+    	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+    	        bufferWritter.write(data);
+    	        bufferWritter.close();
+ 	        System.out.println("Done");
+ 	    	}catch(IOException e){
+    		e.printStackTrace();
+    	}
+    }
+    //create log file
+    public static boolean openFileFirstTime=true;
+    public static final String inp_file= Config.getString("statistics.logFile");
+   // public static File file = new File (inp_file);
+
+    
+    
     public static void printLog(String data){
- 	   System.out.println(data);
+    	if (inp_file != null){
+    		writeLog(data+"\n");
+    	}
+    	System.out.println(data);
     }
      
     /**
@@ -137,48 +176,60 @@ public class StaticPriorityScheduler extends Scheduler {
 	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).waitForAccess(this);
-	   
+
 	}
 
 	public void acquire(KThread thread) {
 		Lib.assertTrue(Machine.interrupt().disabled());
 	    Lib.assertTrue(priorityWaitQueue.isEmpty());
-	    
+
 	}
 
 	public KThread nextThread() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
-	    
+
 	    if (priorityWaitQueue.isEmpty())
 	    	return null;
-	    int highestKey=priorityWaitQueue.firstKey(); //get highest priority thread
-	    
-	    
+	    int highestKey=priorityWaitQueue.firstKey(); //get highest priority thread (i.e. minimum absolute value)
+
+
 	    //remove highest priority thread and if its only one, remove the key also
 	    if (priorityWaitQueue.get(highestKey).size()==1){ 
 	    	KThread thread =priorityWaitQueue.get(highestKey).removeFirst();
 	    	priorityWaitQueue.remove(highestKey);
-	    	
-	    	long currentWaitTime=Machine.timer().getTime()-thread.startWaitTime;
+
+	    	long currentWaitTime=SystemTime.getTime()-thread.startWaitTime;
 	    	thread.soFarWaitTime=currentWaitTime+thread.lastWaitTimeForRun;
-	    	if (thread.getName()=="main" && this.priorityWaitQueue.isEmpty()){
+	    	if (thread.getName()=="main" ){
 		    	printSystemStats();
 		    }
+	    	recordScheduleInfo(thread);
 	    	return thread;
 	      }
-	    
+
 	    KThread thread =priorityWaitQueue.get(highestKey).removeFirst();
-	    long currentWaitTime=Machine.timer().getTime()-thread.startWaitTime;
+	    long currentWaitTime=SystemTime.getTime()-thread.startWaitTime;
     	thread.soFarWaitTime=currentWaitTime+thread.lastWaitTimeForRun;
     	
-        if (thread.getName()=="main" && this.priorityWaitQueue.isEmpty()){
+        if (thread.getName()=="main"){
 	    	printSystemStats();
 	    }
-    	
+        
+        recordScheduleInfo(thread);
 	    return thread;
-	    
-	    
+
+
 	}
+	
+	public void recordScheduleInfo(KThread thread ){
+
+		long currentTime=SystemTime.getTime();
+		String threadName=thread.getName();
+		int currentPriority=thread.startPriority;
+		printLog(currentTime+","+threadName+","+currentPriority);
+	}
+
+	
 
 	/**
 	 * Return the next thread that <tt>nextThread()</tt> would return,
@@ -188,18 +239,18 @@ public class StaticPriorityScheduler extends Scheduler {
 	 *		return.
 	 */
 	protected KThread pickNextThread() {
-		
+
 		 if (priorityWaitQueue.isEmpty())
 		    	return null;
 		 int highestKey=priorityWaitQueue.firstKey();
 		 return priorityWaitQueue.get(highestKey).getFirst();
 	}
-	
+
 	public void print() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me (if you want)
 	}
-	
+
 	public void printSystemStats(){
 	int totalThreads=threadsWaitingTime.size();
 	long maxWaitTime=0;
@@ -211,14 +262,16 @@ public class StaticPriorityScheduler extends Scheduler {
 		if (threadsWaitingTime.get(i) >maxWaitTime ){
 			maxWaitTime=threadsWaitingTime.get(i);
 		}
-		
+
 	}
-	avgWaitTime=(int)(avgWaitTime/totalThreads);
-	avgTurnTime=(int)(avgTurnTime/totalThreads);
-	
+	if(totalThreads >0) {
+		avgWaitTime=(int)(avgWaitTime/totalThreads);
+		avgTurnTime=(int)(avgTurnTime/totalThreads);
+	}
+
 	StaticPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
 	}
-	
+
 
 	/**
 	 * <tt>true</tt> if this queue should transfer priority from waiting
@@ -227,6 +280,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	public boolean transferPriority;
 	//create the priority queue
 	private TreeMap<Integer,LinkedList<KThread>> priorityWaitQueue=new TreeMap<Integer,LinkedList<KThread>>();
+   
     }
 
     /**
@@ -245,7 +299,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 */
 	public ThreadState(KThread thread) {
 	    this.thread = thread;
-	    
+
 	    setPriority(priorityDefault);
 	}
 
@@ -264,7 +318,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @return	the effective priority of the associated thread.
 	 */
 	public int getEffectivePriority() {
-	   
+
 	    return priority;
 	}
 
@@ -276,9 +330,8 @@ public class StaticPriorityScheduler extends Scheduler {
 	public void setPriority(int priority) {
 	    if (this.priority == priority)
 		return;
-	    
-	    this.priority = priority;
-	    
+        this.priority = priority;
+        this.thread.startPriority=priority;
 	}
 
 	/**
@@ -293,7 +346,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 *
 	 * @see	nachos.threads.ThreadQueue#waitForAccess
 	 */
-	
+
 	/**
 	 * Called when the associated thread has acquired access to whatever is
 	 * guarded by <tt>waitQueue</tt>. This can occur either as a result of
@@ -304,29 +357,29 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @see	nachos.threads.ThreadQueue#acquire
 	 * @see	nachos.threads.ThreadQueue#nextThread
 	 */
-	
+
 	public void waitForAccess(PriorityQueue waitQueue) {
-		
+
 		if (this.thread.arrivalTime==0){
-			this.thread.arrivalTime=Machine.timer().getTime();
+			this.thread.arrivalTime=SystemTime.getTime();
 		}
-		
+
 		if (this.thread.startRunTime>0){ 
-			long currentRunTime=Machine.timer().getTime()-this.thread.startRunTime;
+			long currentRunTime=SystemTime.getTime()-this.thread.startRunTime;
 			this.thread.soFarRunTime=this.thread.soFarRunTime+currentRunTime;
 		}
-		
-		
+
+
 		//add thread in TreeMap according to their priority
 		if (!waitQueue.priorityWaitQueue.containsKey(this.priority)){ //check priority level exist or not
 			waitQueue.priorityWaitQueue.put(this.priority,new LinkedList<KThread>()); //else create one
 		    }
-		    	
+
 		waitQueue.priorityWaitQueue.get(this.priority).add(thread); //add thread at that priority level
+
+		this.thread.startWaitTime=SystemTime.getTime();
+
 		
-		this.thread.startWaitTime=Machine.timer().getTime();
-				
-		System.out.println(waitQueue.priorityWaitQueue);
 	}
 
 	/** The thread with which this object is associated. */	   

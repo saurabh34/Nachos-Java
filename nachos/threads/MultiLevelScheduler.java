@@ -45,29 +45,23 @@ public class MultiLevelScheduler extends Scheduler {
 
     public int getPriority(KThread thread) {
 	Lib.assertTrue(Machine.interrupt().disabled());
-		       
+
 	return getThreadState(thread).getPriority();
     }
-/*
-    public int getEffectivePriority(KThread thread) {
-	Lib.assertTrue(Machine.interrupt().disabled());
-		       
-	return getThreadState(thread).getEffectivePriority();
-    }
-*/
+
     public void setPriority(KThread thread, int priority) {
     
-	      
+
 	Lib.assertTrue(priority >= priorityMinimum &&
 		   priority <= priorityMaximum);
-	
+
 	getThreadState(thread).setPriority(priority);
-	
+
     }
 
     public boolean increasePriority() {
 	boolean intStatus = Machine.interrupt().disable();
-		       
+
 	KThread thread = KThread.currentThread();
 
 	int priority = getPriority(thread);
@@ -82,7 +76,7 @@ public class MultiLevelScheduler extends Scheduler {
 
     public boolean decreasePriority() {
 	boolean intStatus = Machine.interrupt().disable();
-		       
+
 	KThread thread = KThread.currentThread();
 
 	int priority = getPriority(thread);
@@ -94,11 +88,20 @@ public class MultiLevelScheduler extends Scheduler {
 	Machine.interrupt().restore(intStatus);
 	return true;
     }
- /*  
+   
     public static void writeLog(String data){
-		  try{//File file =new File("javaio-appendfile.txt");//if file doesn't exists, then create it
+    		System.out.println("dumping in log file");
+		  try{  File file = new File (inp_file);
 	    		if(!file.exists()){
 	    			file.createNewFile();
+	    			
+	    		}
+	    		if (openFileFirstTime){
+	    			FileWriter fileWritter = new FileWriter(file.getName());
+	    	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+	    	        bufferWritter.write("Starting clock Time (Baseline in milliseconds)= "+SystemTime.baslineTime+"\n");
+	    	        bufferWritter.close();
+	    			openFileFirstTime=false;
 	    		}
 	     		//true = append file
 	    		    FileWriter fileWritter = new FileWriter(file.getName(),true);
@@ -110,12 +113,18 @@ public class MultiLevelScheduler extends Scheduler {
 	    		e.printStackTrace();
 	    	}
 	 }
+    public static boolean openFileFirstTime=true;
+    public static final String inp_file= Config.getString("statistics.logFile");
     
-    public static File file = new File ("C:/dc/Project OS/Nachos-Java/DynamicPriorityScheduler.log");
-   */
-   public static void printLog(String data){
-	   System.out.println(data);
-   }
+    
+   
+    public static void printLog(String data){
+    	if (inp_file != null){
+    		writeLog(data+"\n");
+    	}
+    	System.out.println(data);
+    }
+     
     
         
     /**
@@ -157,13 +166,13 @@ public class MultiLevelScheduler extends Scheduler {
 	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).waitForAccess(this);
-	   
+
 	}
 
 	public void acquire(KThread thread) {
 		Lib.assertTrue(Machine.interrupt().disabled());
 	  //  Lib.assertTrue(priorityWaitQueue.isEmpty());
-	    
+
 	}
 
 	public KThread nextThread() {
@@ -172,8 +181,8 @@ public class MultiLevelScheduler extends Scheduler {
 	    if (!this.topQueue.isEmpty()){
 	    	ThreadState maxPrioritythreadS=this.topQueue.getFirst();
 			this.topQueue.removeFirst();
-	    	
-	       if (maxPrioritythreadS.thread.getName().equals("main") && this.topQueue.isEmpty() && this.middleQueue.isEmpty() && this.bottomQueue.isEmpty() ){
+
+	       if (maxPrioritythreadS.thread.getName().equals("main") ){
 			    	printSystemStats();
 			    }
 	       recordScheduleInfo(maxPrioritythreadS);
@@ -183,8 +192,8 @@ public class MultiLevelScheduler extends Scheduler {
 		if (!this.middleQueue.isEmpty()){
 			ThreadState maxPrioritythreadS=this.middleQueue.getFirst();
 			this.middleQueue.removeFirst();
-	    	
-	       if (maxPrioritythreadS.thread.getName().equals("main") && this.topQueue.isEmpty() && this.middleQueue.isEmpty() && this.bottomQueue.isEmpty()){
+
+	       if (maxPrioritythreadS.thread.getName().equals("main") ){
 			    	printSystemStats();
 			    }
 	       recordScheduleInfo(maxPrioritythreadS);
@@ -194,29 +203,30 @@ public class MultiLevelScheduler extends Scheduler {
 		if (!this.bottomQueue.isEmpty()){
 			ThreadState maxPrioritythreadS=this.bottomQueue.getFirst();
 			this.bottomQueue.removeFirst();
-	    	
-	       if (maxPrioritythreadS.thread.getName().equals("main") && this.topQueue.isEmpty() && this.middleQueue.isEmpty() && this.bottomQueue.isEmpty()){
+
+	       if (maxPrioritythreadS.thread.getName().equals("main")){
 			    	printSystemStats();
 			    }
 	       recordScheduleInfo(maxPrioritythreadS);
 	       System.out.println("nextThreadforexecution "+maxPrioritythreadS.thread.getName());
 	       return maxPrioritythreadS.thread;
 		}
-	    
-	      
+
+
 	    return null;
-	    
-	    
+
+
 	}
-	
+
 	public void recordScheduleInfo(ThreadState ThreadS ){
-		
-		long currentTime=Machine.timer().getTime();
+
+		//long currentTime=Machine.timer().getTime();
+		long currentTime=SystemTime.getTime();
 		String threadName=ThreadS.thread.getName();
 		int currentPriority=ThreadS.priority;
 		printLog(currentTime+","+threadName+","+currentPriority);
 	}
-	
+
 	public void printSystemStats(){
 	int totalThreads=threadsWaitingTime.size();
 	long maxWaitTime=0;
@@ -228,16 +238,16 @@ public class MultiLevelScheduler extends Scheduler {
 		if (threadsWaitingTime.get(i) >maxWaitTime ){
 			maxWaitTime=threadsWaitingTime.get(i);
 		}
-		
+
 	}
 	avgWaitTime=(int)(avgWaitTime/totalThreads);
 	avgTurnTime=(int)(avgTurnTime/totalThreads);
-	
-	MultiLevelScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
+
+	    MultiLevelScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
 	}
-	
-	 
-	
+
+
+
 	/**
 	 * Return the next thread that <tt>nextThread()</tt> would return,
 	 * without modifying the state of this queue.
@@ -255,60 +265,73 @@ public class MultiLevelScheduler extends Scheduler {
 		if (!this.bottomQueue.isEmpty()){
 			return this.bottomQueue.getFirst().thread;
 		}
-		
+
 		return null;
 	}
-	
+
 	public void rearrangeThreads(){
 		System.out.println("#########Call for rearrangeThreads############");
 		int priority;
-		
-		   for (ThreadState threadState: this.bottomQueue){
-			   priority=threadState.getEffectivePriority();
+
+		   System.out.println("bottomQueue");
+		   
+		   Iterator<ThreadState> iterBottom= this.bottomQueue.iterator();
+	       while(iterBottom.hasNext()){
+	    	   ThreadState threadState=iterBottom.next();
+	    	   priority=threadState.getEffectivePriority();
 			   if (priority<=20 && priority >= 11 ){
-				   this.bottomQueue.remove(threadState);
+				   iterBottom.remove();
 				   this.middleQueue.add(threadState);
+				   System.out.println("adding in middlequeue"+priority);
 			   }else if (priority <=10 ){
-				   this.bottomQueue.remove(threadState);
+				   iterBottom.remove();
 				   this.topQueue.add(threadState);
 			   }
 		   }
-		 
-		   
-		   for (ThreadState threadState: this.middleQueue){
+		  
+		   System.out.println("middleQueue");
+             
+		   Iterator<ThreadState> iterMiddile= this.middleQueue.iterator();
+		   while(iterMiddile.hasNext()){
+	    	   ThreadState threadState=iterMiddile.next();
 			   priority=threadState.getEffectivePriority();
 			   if (priority<=10 ){
-				   this.middleQueue.remove(threadState);
+				   iterMiddile.remove();
 				   this.topQueue.add(threadState);
 			   }else if (priority >20 ){
-				   this.middleQueue.remove(threadState);
+				   iterMiddile.remove();
 				   this.bottomQueue.add(threadState);
 			   }
 		   }
 		   
-		   for (ThreadState threadState: this.topQueue){
+		   System.out.println("topQueue");
+		   	
+		   Iterator<ThreadState> iterTop= this.topQueue.iterator();
+		   while(iterTop.hasNext()){
+	    	   ThreadState threadState=iterTop.next();
 			   priority=threadState.getEffectivePriority();
 			   if (priority<=20 && priority >=11 ){
-				   this.topQueue.remove(threadState);
+				   iterTop.remove();
 				   this.middleQueue.add(threadState);
 			   }else if (priority >20 ){
-				   this.topQueue.remove(threadState);
+				   iterTop.remove();
 				   this.bottomQueue.add(threadState);
 			   }
 		   }
-	
+
+
 		   for(ThreadState threadS: this.topQueue)
 				System.out.println("All thread here in top "+"thread="+threadS.thread.getName()+" thread priority="+threadS.priority);
 			for(ThreadState threadS: this.middleQueue)
 				System.out.println("All thread here in middle "+"thread="+threadS.thread.getName()+" thread priority="+threadS.priority);
 			for(ThreadState threadS: this.bottomQueue)
 				System.out.println("All thread here in bottom "+"thread="+threadS.thread.getName()+" thread priority="+threadS.priority);
-		
-		   
+
+
 	}
-	
-	
-	
+
+
+
 	public void print() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me (if you want)
@@ -340,7 +363,7 @@ public class MultiLevelScheduler extends Scheduler {
 	 */
 	public ThreadState(KThread thread) {
 	    this.thread = thread;
-	    
+
 	    setPriority(priorityDefault);
 	}
 
@@ -359,23 +382,26 @@ public class MultiLevelScheduler extends Scheduler {
 	 * @return	the effective priority of the associated thread.
 	 */
 	public int getEffectivePriority() {
-	
-	
-	long currentWaitTime=Machine.timer().getTime()-this.thread.startWaitTime;
+
+
+	//get so far waiting time
+	long currentWaitTime=SystemTime.getTime()-this.thread.startWaitTime;
+	//long temp = this.thread.soFarWaitTime;
 	this.thread.soFarWaitTime=currentWaitTime+this.thread.lastWaitTimeForRun;
-	
+
+	// update the priority according to so far wait, run, age Time
 	int newIncreasePriority=(int)((this.thread.soFarWaitTime-this.thread.soFarRunTime)/agingTime);
-	this.priority=this.priority-newIncreasePriority;
-	
-	if (this.priority > priorityMaximum){
+	this.priority=this.thread.startPriority-newIncreasePriority;  //increase priority (i.e. decrease priority absolute value)
+
+	if (this.priority > priorityMaximum){ 
 		this.priority=priorityMaximum;
-		}
-		if (this.priority < priorityMinimum){
-			this.priority=priorityMinimum;
-		}
-		
-		System.out.println(this.thread.getName()+" priority:"+this.priority+"######"+this.thread.soFarWaitTime+" "+this.thread.soFarRunTime+"  ");
-	    return this.priority;
+	}
+	if (this.priority < priorityMinimum){
+		this.priority=priorityMinimum;
+	}
+
+	System.out.println(this.thread.getName()+" priority= "+this.priority+" soFarWaitTime="+this.thread.soFarWaitTime+" soFarRuntime="+this.thread.soFarRunTime+"  ");
+	return this.priority;
 	}
 
 	/**
@@ -386,9 +412,9 @@ public class MultiLevelScheduler extends Scheduler {
 	public void setPriority(int priority) {
 	    if (this.priority == priority)
 		return;
-	    
+
 	    this.priority = priority;
-	    
+        this.thread.startPriority=priority;
 	}
 
 	/**
@@ -403,7 +429,7 @@ public class MultiLevelScheduler extends Scheduler {
 	 *
 	 * @see	nachos.threads.ThreadQueue#waitForAccess
 	 */
-	
+
 	/**
 	 * Called when the associated thread has acquired access to whatever is
 	 * guarded by <tt>waitQueue</tt>. This can occur either as a result of
@@ -414,27 +440,34 @@ public class MultiLevelScheduler extends Scheduler {
 	 * @see	nachos.threads.ThreadQueue#acquire
 	 * @see	nachos.threads.ThreadQueue#nextThread
 	 */
-	
+
 	public void waitForAccess(PriorityQueue waitQueue) {
 		
+		//first time added to wait thread, record arrival time
 		if (this.thread.arrivalTime==0){
-			this.thread.arrivalTime=Machine.timer().getTime();
+		 	this.thread.arrivalTime=SystemTime.getTime();
 		}
-		
+	
+        //add previous run time and update so far run time
 		if (this.thread.startRunTime>0){ 
-			long currentRunTime=Machine.timer().getTime()-this.thread.startRunTime;
+			long currentRunTime=SystemTime.getTime()-this.thread.startRunTime;
 			this.thread.soFarRunTime=this.thread.soFarRunTime+currentRunTime;
 		}
 		
+		//put in the appropriate Queue according to its priority
 		if ( this.priority >=1  && this.priority <=10)
 				waitQueue.topQueue.add(this);
 		if ( this.priority >=11  && this.priority <=20)
 			waitQueue.middleQueue.add(this);
 		if ( this.priority >20)
 			waitQueue.bottomQueue.add(this);
+
+		System.out.println("thread added="+this.thread.getName()+" thread priority="+this.priority+" at time="+System.currentTimeMillis());
+		//start recording wait time of this thread
 		
-		System.out.println("thread added="+this.thread.getName()+" thread priority="+this.priority);
-		this.thread.startWaitTime=Machine.timer().getTime();
+		this.thread.startWaitTime=SystemTime.getTime();
+		
+		
 		
 		for(ThreadState threadS: waitQueue.topQueue)
 			System.out.println("*********All thread here top "+"thread="+threadS.thread.getName()+"thread priority="+threadS.priority);
@@ -448,12 +481,9 @@ public class MultiLevelScheduler extends Scheduler {
 	protected KThread thread;
 	/** The priority of the associated thread. */
 	protected int priority;
-	
+
 
     	
     }
     
 }
-
-
-

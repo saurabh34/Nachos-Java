@@ -1,0 +1,9 @@
+Notes: 
+1) Arrival time of two threads can be same because we are noting time milliseconds. Machine can execute two forks() quickly in less than  milliseconds. 
+2) Run time can be zero if thread workload is very low. Again we won't able to notice this change in milliseconds.    
+3) To see above difference, please change implementation of nachos.threadsSystemTime.getTime() and use Machine.timer().getTime().   
+4) If main thread excutes again after initial start (may be its priority becomes higher) than the remaining threads will not be executed.
+5) Our formula for getting effective priority is =(sofarWaitTime-soFarRunTime)/ageTime.
+    You can modify this formula for border cases when priority becomes highest or lowest. But, for purposes, we will stick to this only.
+	In problem its not mentioned specifically that every time the scheduler is interrupted for scheduling a thread, effective priority of the threads should be based on their ---->running/waiting times<--- Latest runningTime/waitingTime or soFarWaitTime/soFarRunTime. Logically we choose second option. 
+6) Our result shows this logical rule: ArrivalTime+WaitTime+RunTime ~ DepartureTime. Not excatly equal to sometime because of some other processing overhead. 
