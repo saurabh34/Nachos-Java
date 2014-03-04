@@ -270,7 +270,7 @@ public class MultiLevelScheduler extends Scheduler {
 				   this.middleQueue.add(threadState);
 			   }else if (priority <=10 ){
 				   this.bottomQueue.remove(threadState);
-				   this.middleQueue.add(threadState);
+				   this.topQueue.add(threadState);
 			   }
 		   }
 		 

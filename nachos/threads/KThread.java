@@ -444,7 +444,7 @@ public class KThread {
        
        
         boolean oldInterrupStatus = Machine.interrupt().disable();
-        ThreadedKernel.scheduler.setPriority(low, 25);
+        ThreadedKernel.scheduler.setPriority(low, 20);
         ThreadedKernel.scheduler.setPriority(med, 15);
         ThreadedKernel.scheduler.setPriority(high, 5);
         ThreadedKernel.scheduler.setPriority(high2, 4);
