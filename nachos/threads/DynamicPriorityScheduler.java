@@ -48,13 +48,7 @@ public class DynamicPriorityScheduler extends Scheduler {
 
 	return getThreadState(thread).getPriority();
     }
-/*
-    public int getEffectivePriority(KThread thread) {
-	Lib.assertTrue(Machine.interrupt().disabled());
-		       
-	return getThreadState(thread).getEffectivePriority();
-    }
-*/
+
     public void setPriority(KThread thread, int priority) {
     
 
@@ -96,7 +90,7 @@ public class DynamicPriorityScheduler extends Scheduler {
     }
    
     public static void writeLog(String data){
-		System.out.println("dumping in log file");
+		
 	  try{  File file = new File (inp_file);
     		if(!file.exists()){
     			file.createNewFile();
@@ -114,12 +108,13 @@ public class DynamicPriorityScheduler extends Scheduler {
     	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
     	        bufferWritter.write(data);
     	        bufferWritter.close();
- 	        System.out.println("Done");
+ 	       
  	    	}catch(IOException e){
     		e.printStackTrace();
     	}
     }
-	public static boolean openFileFirstTime=true;
+	//create log file
+    public static boolean openFileFirstTime=true;
 	public static final String inp_file= Config.getString("statistics.logFile");
 
 
@@ -144,6 +139,7 @@ public class DynamicPriorityScheduler extends Scheduler {
      */
     public static final int priorityMaximum = Integer.parseInt(Config.getString("scheduler.maxPriority")); 
     public long agingTime= Integer.parseInt(Config.getString("scheduler.agingTime"));
+    //store waiting and turn around time of each thread
     public static ArrayList<Long> threadsWaitingTime=new  ArrayList<Long>();
     public static ArrayList<Long> threadsTurnAroundTime=new  ArrayList<Long>();
     /**
@@ -181,15 +177,17 @@ public class DynamicPriorityScheduler extends Scheduler {
 
 	public KThread nextThread() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
+	    //get max priority thread
 	    ThreadState maxPriorityThread=maxPriorityThread();
 
 	    if (maxPriorityThread==null){
 	    	return null;
 	    }
-	    System.out.println("nextThreadforexecution "+maxPriorityThread.thread.getName());
+	    //remove the thread from wait queue
 	    this.priorityWaitQueue.remove(maxPriorityThread);
 	    recordScheduleInfo(maxPriorityThread);
-
+	   
+	    //print statistics if its main method
 	    if (maxPriorityThread.thread.getName().equals("main")){
 	    	printSystemStats();
 	    }
@@ -200,7 +198,8 @@ public class DynamicPriorityScheduler extends Scheduler {
 	}
 
 	public void recordScheduleInfo(ThreadState ThreadS ){
-
+        
+		//print on console the max priority thread statistics 
 		long currentTime=SystemTime.getTime();
 		String threadName=ThreadS.thread.getName();
 		int currentPriority=ThreadS.priority;
@@ -208,6 +207,8 @@ public class DynamicPriorityScheduler extends Scheduler {
 	}
 
 	public void printSystemStats(){
+	
+	//print system statistics
 	int totalThreads=threadsWaitingTime.size();
 	long maxWaitTime=0;
 	long avgWaitTime=0;
@@ -242,7 +243,9 @@ public class DynamicPriorityScheduler extends Scheduler {
 
 	public ThreadState maxPriorityThread(){
 
-		//System.out.println("#########Call for maxPrioritythread############");
+		//iterate the max priority thread in linkedList
+		//also iteration will give max priority thread whose waiting is maximum as it will in front
+		//of every thread of same priority (first among them)
 		ThreadState maxPriorityThread=null;
 		if (this.priorityWaitQueue.isEmpty()){
 			return null;
@@ -313,11 +316,11 @@ public class DynamicPriorityScheduler extends Scheduler {
 	 */
 	public int getEffectivePriority() {
 
-
+	//get so far waiting time
 	long currentWaitTime=SystemTime.getTime()-this.thread.startWaitTime;
-	//long temp = this.thread.soFarWaitTime;
 	this.thread.soFarWaitTime=currentWaitTime+this.thread.lastWaitTimeForRun;
-
+	
+	// update the priority according to so far wait, run, age Time
 	int newIncreasePriority=(int)((this.thread.soFarWaitTime-this.thread.soFarRunTime)/agingTime);
 	this.priority=this.thread.startPriority-newIncreasePriority;
 
@@ -370,7 +373,8 @@ public class DynamicPriorityScheduler extends Scheduler {
 	 */
 
 	public void waitForAccess(PriorityQueue waitQueue) {
-        //first time added to wait thread, record arrival time
+        
+		//first time added to wait thread, record arrival time
 		if (this.thread.arrivalTime==0){
 			this.thread.arrivalTime=SystemTime.getTime();
 		}
@@ -381,13 +385,11 @@ public class DynamicPriorityScheduler extends Scheduler {
 		}
 		//put in the waitQueue 
 		waitQueue.priorityWaitQueue.add(this);
-		System.out.println("thread added="+this.thread.getName()+"thread priority="+this.priority);
+		
 		//start recording wait time of this thread
 		this.thread.startWaitTime=SystemTime.getTime(); 
 
-		for(ThreadState threadS: waitQueue.priorityWaitQueue)
-			System.out.println("*********All thread here "+"thread="+threadS.thread.getName()+"thread priority="+threadS.priority);
-
+		
 	}
 
 	/** The thread with which this object is associated. */	   

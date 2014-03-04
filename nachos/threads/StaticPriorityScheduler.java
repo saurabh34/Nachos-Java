@@ -101,7 +101,7 @@ public class StaticPriorityScheduler extends Scheduler {
     }
     
     public static void writeLog(String data){
-		System.out.println("dumping in log file");
+		
 	  try{  File file = new File (inp_file);
     		if(!file.exists()){
     			file.createNewFile();
@@ -119,7 +119,7 @@ public class StaticPriorityScheduler extends Scheduler {
     	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
     	        bufferWritter.write(data);
     	        bufferWritter.close();
- 	        System.out.println("Done");
+ 	      
  	    	}catch(IOException e){
     		e.printStackTrace();
     	}
@@ -376,7 +376,7 @@ public class StaticPriorityScheduler extends Scheduler {
 		    }
 
 		waitQueue.priorityWaitQueue.get(this.priority).add(thread); //add thread at that priority level
-
+		//start recording wait time of this thread
 		this.thread.startWaitTime=SystemTime.getTime();
 
 		
