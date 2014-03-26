@@ -160,6 +160,7 @@ public class KThread {
     private void runThread() {
 	begin();
 	target.run();
+	waitOnThisThread.V(); //wake up any thread waiting on this to finish/join
 	finish();
     }
 
@@ -300,9 +301,11 @@ public class KThread {
      */
     public void join() {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
-
+	//System.out.println(KThread.currentThread.getName());//-->main
+	//System.out.println(this.getName());//---> t4
 	Lib.assertTrue(this != currentThread);
-
+	waitOnThisThread.P();
+	//waitOnThisThread.V();
     }
 
     /**
@@ -423,9 +426,14 @@ public class KThread {
      */
     public static void selfTest()
     {   	   	
-       TestCases.runTestCase1(); //run test case 1
-       currentThread.yield();    //yield main thread so that rest of threads can run
-    
+      // TestCases.runTestCase1(); //run test case 1
+    	//boolean intStatus = Machine.interrupt().disable();
+		//ThreadedKernel.scheduler.setPriority(currentThread, 1); // max for main thread
+		//Machine.interrupt().restore(intStatus);
+  	
+     	LockTest.simpleTest();
+        currentThread.yield();   //yield main thread so that rest of threads can run
+       
     }
     
     private static final char dbgThread = 't';
@@ -476,4 +484,5 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+    private Semaphore waitOnThisThread = new Semaphore(0);
 }

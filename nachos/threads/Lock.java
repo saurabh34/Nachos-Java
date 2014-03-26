@@ -38,6 +38,7 @@ public class Lock {
 
 	if (lockHolder != null) {
 	    waitQueue.waitForAccess(thread);
+	    System.out.println("Sending thread "+KThread.currentThread().getName()+" to block/sleep state and put on lock waitQueue");
 	    KThread.sleep();
 	}
 	else {
@@ -57,10 +58,11 @@ public class Lock {
 	Lib.assertTrue(isHeldByCurrentThread());
 
 	boolean intStatus = Machine.interrupt().disable();
-
-	if ((lockHolder = waitQueue.nextThread()) != null)
-	    lockHolder.ready();
-	
+	//give access to next immediate thread in lock wait queue  and put in CPU scheduler ready queue
+	if ((lockHolder = waitQueue.nextThread()) != null){ 
+		System.out.println("Waking up lock thread: "+lockHolder.getName());
+		lockHolder.ready();                            
+	}
 	Machine.interrupt().restore(intStatus);
     }
 
@@ -74,6 +76,5 @@ public class Lock {
     }
 
     private KThread lockHolder = null;
-    private ThreadQueue waitQueue =
-	ThreadedKernel.scheduler.newThreadQueue(true);
+    private ThreadQueue waitQueue =	new FCFSQueue();
 }

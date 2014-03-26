@@ -224,7 +224,7 @@ public class DynamicPriorityScheduler extends Scheduler {
 		avgWaitTime=(int)(avgWaitTime/totalThreads);
 		avgTurnTime=(int)(avgTurnTime/totalThreads);
 
-	    DynamicPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
+	    DynamicPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+maxWaitTime+","+avgTurnTime);
 	}
 
 
@@ -331,7 +331,7 @@ public class DynamicPriorityScheduler extends Scheduler {
 			this.priority=priorityMinimum;
 		}
 
-		System.out.println(this.thread.getName()+" priority= "+this.priority+" soFarWaitTime="+this.thread.soFarWaitTime+" soFarRuntime="+this.thread.soFarRunTime+"  ");
+		//System.out.println(this.thread.getName()+" priority= "+this.priority+" soFarWaitTime="+this.thread.soFarWaitTime+" soFarRuntime="+this.thread.soFarRunTime+"  ");
 	    return this.priority;
 	}
 

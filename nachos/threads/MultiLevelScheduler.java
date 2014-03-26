@@ -244,7 +244,7 @@ public class MultiLevelScheduler extends Scheduler {
 	avgWaitTime=(int)(avgWaitTime/totalThreads);
 	avgTurnTime=(int)(avgTurnTime/totalThreads);
 
-	    MultiLevelScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
+	    MultiLevelScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+maxWaitTime+","+avgTurnTime);
 	}
 
 
@@ -282,7 +282,7 @@ public class MultiLevelScheduler extends Scheduler {
 			   if (priority<=20 && priority >= 11 ){
 				   iterBottom.remove();
 				   this.middleQueue.add(threadState);
-				   System.out.println("adding in middlequeue"+priority);
+				   //System.out.println("adding in middlequeue"+priority);
 			   }else if (priority <=10 ){
 				   iterBottom.remove();
 				   this.topQueue.add(threadState);
@@ -390,7 +390,7 @@ public class MultiLevelScheduler extends Scheduler {
 		this.priority=priorityMinimum;
 	}
 
-	System.out.println(this.thread.getName()+" priority= "+this.priority+" soFarWaitTime="+this.thread.soFarWaitTime+" soFarRuntime="+this.thread.soFarRunTime+"  ");
+	//System.out.println(this.thread.getName()+" priority= "+this.priority+" soFarWaitTime="+this.thread.soFarWaitTime+" soFarRuntime="+this.thread.soFarRunTime+"  ");
 	return this.priority;
 	}
 

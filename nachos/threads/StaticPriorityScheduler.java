@@ -269,7 +269,7 @@ public class StaticPriorityScheduler extends Scheduler {
 		avgTurnTime=(int)(avgTurnTime/totalThreads);
 	}
 
-	StaticPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+avgTurnTime+","+maxWaitTime);
+	StaticPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+maxWaitTime+","+avgTurnTime);
 	}
 
 
