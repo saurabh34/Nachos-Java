@@ -92,13 +92,17 @@ public class Lock {
     	Lib.assertTrue(isHeldByCurrentThread());
 
 		boolean intStatus = Machine.interrupt().disable();
+		
 	//give access to next immediate thread in lock wait queue  and put in CPU scheduler ready queue
+		//lockHolder.inherentPriority = lockHolder.originalPriority;
+		ThreadedKernel.scheduler.setPriority(lockHolder, lockHolder.originalPriority);
+		System.out.println("Restoring original priority of "+ lockHolder.getName()+ " to "+ lockHolder.originalPriority );
+		System.out.println("Reordering the Scheduler Priority Queue");
+		KThread.reorderSchedulerPriorityQueue();
+		
 		if ((lockHolder = waitQueue.nextThread()) != null){
 			
 			//revoke the lockHolder's priority and set the children thread of the parent thread to null
-			lockHolder.inherentPriority = lockHolder.originalPriority;
-			System.out.println("Reordering the Scheduler Priority Queue");
-			KThread.reorderSchedulerPriorityQueue();
 			lockHolder.WaitingOnlockThread=null;
 			//KThread parent = lockHolder.ReceivedPriorityThread;
 			//if(parent!=null) parent.donatedPriorityThread = null;  

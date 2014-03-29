@@ -225,7 +225,7 @@ public class StaticPriorityScheduler extends Scheduler {
 
 		long currentTime=SystemTime.getTime();
 		String threadName=thread.getName();
-		int currentPriority=thread.startPriority;
+		int currentPriority=thread.inherentPriority;
 		printLog(currentTime+","+threadName+","+currentPriority);
 	}
 
@@ -353,7 +353,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @return	the priority of the associated thread.
 	 */
 	public int getPriority() {
-	    return priority;
+	    return this.thread.inherentPriority;
 	}
 
 	/**
@@ -363,7 +363,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 */
 	public int getEffectivePriority() {
 
-	    return priority;
+	    return this.thread.inherentPriority;
 	}
 
 	/**
@@ -379,7 +379,8 @@ public class StaticPriorityScheduler extends Scheduler {
         this.thread.inherentPriority = priority;
         this.thread.startPriority=priority;
 	}
-
+   
+	
 	/**
 	 * Called when <tt>waitForAccess(thread)</tt> (where <tt>thread</tt> is
 	 * the associated thread) is invoked on the specified priority queue.
