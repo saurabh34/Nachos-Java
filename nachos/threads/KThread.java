@@ -427,11 +427,11 @@ public class KThread {
     public static void selfTest()
     {   	   	
       // TestCases.runTestCase1(); //run test case 1
-    	//boolean intStatus = Machine.interrupt().disable();
-		//ThreadedKernel.scheduler.setPriority(currentThread, 1); // max for main thread
-		//Machine.interrupt().restore(intStatus);
+    	boolean intStatus = Machine.interrupt().disable();
+		ThreadedKernel.scheduler.setPriority(currentThread, 1); // max for main thread
+		Machine.interrupt().restore(intStatus);
   	
-     	LockTest.simpleTest();
+     	LockTest.simpleTest2();
         currentThread.yield();   //yield main thread so that rest of threads can run
        
     }

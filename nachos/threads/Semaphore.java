@@ -61,7 +61,7 @@ public class Semaphore {
 	}
 	else {
 	    value++;
-	}
+	 }
 	
 	Machine.interrupt().restore(intStatus);
     }
