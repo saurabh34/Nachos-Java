@@ -41,8 +41,10 @@ public class Lock {
 		System.out.println("propogating priority");
 		thread.WaitingOnlockThread=lockHolder;
 		propogatePriority(thread, lockHolder);
+		
 		System.out.println("Reordering the Scheduler Priority Queue");
 		KThread.reorderSchedulerPriorityQueue();
+		
 		waitQueue.waitForAccess(thread);
 	    System.out.println("Sending thread "+KThread.currentThread().getName()+" to block/sleep state and put on lock waitQueue");
 	    KThread.sleep();

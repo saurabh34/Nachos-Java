@@ -492,5 +492,5 @@ public class KThread {
     public int originalPriority;
     public KThread donatedPriorityThread;
     public KThread ReceivedPriorityThread;
-    public KThread WaitingOnlockThread;
+    public KThread WaitingOnlockThread=null;
 }
