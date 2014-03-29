@@ -37,7 +37,13 @@ public class Lock {
 	KThread thread = KThread.currentThread();
 
 	if (lockHolder != null) {
-	    waitQueue.waitForAccess(thread);
+		// propogating priority from thread to lockHolder
+		System.out.println("propogating priority");
+		thread.WaitingOnlockThread=lockHolder;
+		propogatePriority(thread, lockHolder);
+		System.out.println("Reordering the Scheduler Priority Queue");
+		KThread.reorderSchedulerPriorityQueue();
+		waitQueue.waitForAccess(thread);
 	    System.out.println("Sending thread "+KThread.currentThread().getName()+" to block/sleep state and put on lock waitQueue");
 	    KThread.sleep();
 	}
@@ -50,20 +56,55 @@ public class Lock {
 
 	Machine.interrupt().restore(intStatus);
     }
+    
+    //take care of two cases recursion should be inside if condition 2) what if from recieve thread changes 
+    public void propogatePriority(KThread waitThread, KThread lockHolder) {
+    	
+    	if(lockHolder.inherentPriority > waitThread.inherentPriority){
+	    	lockHolder.inherentPriority=waitThread.inherentPriority;
+	    	System.out.println(lockHolder.getName()+" inheriting priority from "+ waitThread.getName());
+	    	//waitThread.donatedPriorityThread = lockHolder;
+	    	//waitThread.WaitingOnlockThread = lockHolder;
+	     //   if (lockHolder.ReceivedPriorityThread !=null){
+	     //   	lockHolder.ReceivedPriorityThread.donatedPriorityThread=null;
+	      //  }
+	      //  lockHolder.ReceivedPriorityThread = waitThread;
+	       // KThread donatedThread = lockHolder.donatedPriorityThread;
+	       
+	        // propogating priority from lockHolder to donatedThread
+	        if (lockHolder.WaitingOnlockThread!= null){
+	        	//if (donatedThread.WaitingOnlockThread !=null){
+	        		
+	        	//}
+	        	propogatePriority(lockHolder,lockHolder.WaitingOnlockThread);
+	        }
+	        else
+	        	return;
+	    }
+    }
 
     /**
      * Atomically release this lock, allowing other threads to acquire it.
      */
     public void release() {
-	Lib.assertTrue(isHeldByCurrentThread());
+    	Lib.assertTrue(isHeldByCurrentThread());
 
-	boolean intStatus = Machine.interrupt().disable();
+		boolean intStatus = Machine.interrupt().disable();
 	//give access to next immediate thread in lock wait queue  and put in CPU scheduler ready queue
-	if ((lockHolder = waitQueue.nextThread()) != null){ 
-		System.out.println("Waking up lock thread: "+lockHolder.getName());
-		lockHolder.ready();                            
-	}
-	Machine.interrupt().restore(intStatus);
+		if ((lockHolder = waitQueue.nextThread()) != null){
+			
+			//revoke the lockHolder's priority and set the children thread of the parent thread to null
+			lockHolder.inherentPriority = lockHolder.originalPriority;
+			System.out.println("Reordering the Scheduler Priority Queue");
+			KThread.reorderSchedulerPriorityQueue();
+			lockHolder.WaitingOnlockThread=null;
+			//KThread parent = lockHolder.ReceivedPriorityThread;
+			//if(parent!=null) parent.donatedPriorityThread = null;  
+			System.out.println("Waking up lock thread: "+lockHolder.getName());
+			lockHolder.ready();                            
+		}
+		
+		Machine.interrupt().restore(intStatus);
     }
 
     /**
@@ -77,4 +118,5 @@ public class Lock {
 
     private KThread lockHolder = null;
     private ThreadQueue waitQueue =	new FCFSQueue();
+    private String LockName = null;
 }

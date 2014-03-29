@@ -26,7 +26,8 @@ public class FCFSQueue extends ThreadQueue {
 		}
 
 		public void print(){}
-
+		public void reorderPriorityQueue(){
+			}
 		private LinkedList<KThread> waitQueue = new LinkedList<KThread>();
 	}
 

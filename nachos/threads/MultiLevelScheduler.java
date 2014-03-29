@@ -170,7 +170,7 @@ public class MultiLevelScheduler extends Scheduler {
 	    getThreadState(thread).waitForAccess(this);
 
 	}
-
+    
 	public void acquire(KThread thread) {
 		Lib.assertTrue(Machine.interrupt().disabled());
 	  //  Lib.assertTrue(priorityWaitQueue.isEmpty());
@@ -322,7 +322,9 @@ public class MultiLevelScheduler extends Scheduler {
 	}
 
 
-
+	public void reorderPriorityQueue(){
+		
+	}
 	public void print() {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me (if you want)

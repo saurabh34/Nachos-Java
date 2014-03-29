@@ -269,7 +269,9 @@ public class DynamicPriorityScheduler extends Scheduler {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me (if you want)
 	}
-
+	 public void reorderPriorityQueue(){
+			
+		}
 	/**
 	 * <tt>true</tt> if this queue should transfer priority from waiting
 	 * threads to the owning thread.

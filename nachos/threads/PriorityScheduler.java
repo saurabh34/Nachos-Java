@@ -162,14 +162,16 @@ public class PriorityScheduler extends Scheduler {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    // implement me (if you want)
 	}
-
+	 public void reorderPriorityQueue(){
+			
+		}
 	/**
 	 * <tt>true</tt> if this queue should transfer priority from waiting
 	 * threads to the owning thread.
 	 */
 	public boolean transferPriority;
     }
-
+   
     /**
      * The scheduling state of a thread. This should include the thread's
      * priority, its effective priority, any objects it owns, and the queue
@@ -252,7 +254,7 @@ public class PriorityScheduler extends Scheduler {
 	    // implement me
 		
 	}	
-
+	
 	/** The thread with which this object is associated. */	   
 	protected KThread thread;
 	/** The priority of the associated thread. */

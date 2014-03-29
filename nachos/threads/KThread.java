@@ -289,7 +289,7 @@ public class KThread {
 	status = statusReady;
 	if (this != idleThread)
 	    readyQueue.waitForAccess(this);
-
+	
 	Machine.autoGrader().readyThread(this);
     }
 
@@ -419,8 +419,11 @@ public class KThread {
 	Lib.assertTrue(this == currentThread);
     }
 
-  
-
+    public static void reorderSchedulerPriorityQueue(){
+    	
+    	readyQueue.reorderPriorityQueue();
+    }
+    
     /**
      * Tests whether this module is working.
      */
@@ -485,4 +488,9 @@ public class KThread {
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
     private Semaphore waitOnThisThread = new Semaphore(0);
+    public int inherentPriority;
+    public int originalPriority;
+    public KThread donatedPriorityThread;
+    public KThread ReceivedPriorityThread;
+    public KThread WaitingOnlockThread;
 }

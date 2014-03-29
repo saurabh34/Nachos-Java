@@ -272,7 +272,51 @@ public class StaticPriorityScheduler extends Scheduler {
 	StaticPriorityScheduler.printLog("System"+","+totalThreads+","+avgWaitTime+","+maxWaitTime+","+avgTurnTime);
 	}
 
+    public void reorderPriorityQueue(){
+    	System.out.println("Starting reordring...");
+    	System.out.println(priorityWaitQueue);
+    	LinkedList<KThread> tempThreads=new LinkedList<KThread>();
+    	
+    	for(Iterator<Map.Entry<Integer,LinkedList<KThread>>> it = priorityWaitQueue.entrySet().iterator(); it.hasNext(); ) {
+    	      Map.Entry<Integer,LinkedList<KThread>> entry = it.next();
+    	      LinkedList<KThread> priorityLevelThreads=entry.getValue();
+    	      //System.out.println("priorityLevelThreads.size()== "+priorityLevelThreads.size());
+    	      Iterator<KThread> iter= priorityLevelThreads.iterator();
+    	      int numOfThreadsRemoved=0;
+    	      while(iter.hasNext()){
+    	    	  KThread thread=iter.next();
+    	    	  if (getThreadState(thread).getPriority() != thread.inherentPriority){
+    	    		  getThreadState(thread).priority=thread.inherentPriority;
+    	    		  tempThreads.add(thread);
+    	    		  iter.remove();
+    	    		  numOfThreadsRemoved++;
+    	    	  }
+    	       }
+    	      
+    	     // System.out.println("numOfThreadsRemoved== "+numOfThreadsRemoved);
+    	    //  System.out.println("priorityLevelThreads.size()== "+priorityLevelThreads.size());
+    	      if (priorityLevelThreads.size()== 0){
+  	        	   it.remove();
+    	      }
+    	    }
+    	
+    	Iterator<KThread> iter= tempThreads.iterator();
+    	 while(iter.hasNext()){
+    		 KThread thread=iter.next();
+    		 if (!priorityWaitQueue.containsKey(getThreadState(thread).priority)){ //check priority level exist or not
+    				priorityWaitQueue.put(getThreadState(thread).priority,new LinkedList<KThread>()); //else create one
+    			    }
 
+    			priorityWaitQueue.get(getThreadState(thread).priority).add(thread);
+    		 
+    	 }
+    	 
+    	System.out.println("Finished reordring...");
+     	System.out.println(priorityWaitQueue);
+     	
+    	
+    }
+	
 	/**
 	 * <tt>true</tt> if this queue should transfer priority from waiting
 	 * threads to the owning thread.
@@ -331,6 +375,8 @@ public class StaticPriorityScheduler extends Scheduler {
 	    if (this.priority == priority)
 		return;
         this.priority = priority;
+        this.thread.originalPriority = priority;
+        this.thread.inherentPriority = priority;
         this.thread.startPriority=priority;
 	}
 

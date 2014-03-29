@@ -79,7 +79,10 @@ public class RoundRobinScheduler extends Scheduler {
 	    for (Iterator i=waitQueue.iterator(); i.hasNext(); )
 		System.out.print((KThread) i.next() + " ");
 	}
-
+    
+	public void reorderPriorityQueue(){
+		
+	}
 	private LinkedList waitQueue = new LinkedList();
     }
 }

@@ -90,7 +90,8 @@ public abstract class ThreadQueue {
      * 			returned from <tt>nextThread()</tt>.
      */
     public abstract void acquire(KThread thread);
-
+    
+    public abstract void reorderPriorityQueue();
     /**
      * Print out all the threads waiting for access, in no particular order.
      */
