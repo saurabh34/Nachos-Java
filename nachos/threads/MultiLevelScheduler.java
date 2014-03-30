@@ -164,7 +164,13 @@ public class MultiLevelScheduler extends Scheduler {
 	PriorityQueue(boolean transferPriority) {
 	    this.transferPriority = transferPriority;
 	}
-
+	 public int getMaxThreadPriority(){
+	    	return -1;
+	    }
+		public void ChangeLockOwnerOfWaitingThreadsTo(KThread newLockOwner){}
+		 public LinkedList<Integer> getThreadIdsOfLock(){
+			 return null;
+		 };
 	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).waitForAccess(this);

@@ -9,15 +9,16 @@ public class LockTest {
 		AcessSharedData() { }
 
 		public void run() {
-			
+			S.V();
 			lock.acquire();
-			System.out.println(KThread.currentThread().getName()+" acquiring lock and entering critical section");
+			System.out.println(KThread.currentThread().getName()+" acquiring lock1 and entering critical section");
 			sharedData=sharedData+1;
 			System.out.println("shared data value: "+sharedData);
-			S.V();
+			
 			KThread.currentThread().yield();
+			System.out.println(KThread.currentThread().getName()+" releasing lock1 and exiting critical section");
 			lock.release();
-			System.out.println(KThread.currentThread().getName()+" releasing lock and exiting critical section");
+			
 		}
 	}
 	
@@ -27,13 +28,13 @@ public class LockTest {
 		public void run() {
 			S.V();
 			lock2.acquire();
-			
-			System.out.println(KThread.currentThread().getName()+" acquiring lock and entering critical section");
+			System.out.println(KThread.currentThread().getName()+" acquiring lock2 and entering critical section");
 			sharedData2=sharedData2+1;
 			System.out.println("shared data value: "+sharedData2);
 			KThread.currentThread().yield();
+			System.out.println(KThread.currentThread().getName()+" releasing lock2 and exiting critical section");
 			lock2.release();
-			System.out.println(KThread.currentThread().getName()+" releasing lock and exiting critical section");
+			
 		}
 	}
 	
@@ -43,15 +44,18 @@ public class LockTest {
 		public void run() {
 			
 			lock2.acquire();
+			System.out.println(KThread.currentThread().getName()+" acquiring lock2 and entering critical section");
 			S.V();
 			lock.acquire();
-			System.out.println(KThread.currentThread().getName()+" acquiring lock and entering critical section");
+			System.out.println(KThread.currentThread().getName()+" acquiring lock1 and entering critical section");
 			sharedData2=sharedData2+1;
 			System.out.println("shared data value: "+sharedData2);
 			KThread.currentThread().yield();
+			System.out.println(KThread.currentThread().getName()+" releasing lock1 and exiting critical section");
 			lock.release();
+			System.out.println(KThread.currentThread().getName()+" releasing lock2 and exiting critical section");
 			lock2.release();
-			System.out.println(KThread.currentThread().getName()+" releasing lock and exiting critical section");
+			
 		}
 	}
 	
@@ -59,15 +63,15 @@ public class LockTest {
 		AcessSharedData3() { }
 
 		public void run() {
-			
-			lock3.acquire();
 			S.V();
-			System.out.println(KThread.currentThread().getName()+" acquiring lock and entering critical section");
+			lock3.acquire();
+			System.out.println(KThread.currentThread().getName()+" acquiring lock3 and entering critical section");
 			sharedData2=sharedData2+1;
 			System.out.println("shared data value: "+sharedData2);
 			KThread.currentThread().yield();
+			System.out.println(KThread.currentThread().getName()+" releasing lock3 and exiting critical section");
 			lock3.release();
-			System.out.println(KThread.currentThread().getName()+" releasing lock and exiting critical section");
+			
 		}
 	}
 	
@@ -77,19 +81,45 @@ public class LockTest {
 		public void run() {
 			
 			lock3.acquire();
+			System.out.println(KThread.currentThread().getName()+" acquiring lock3 and entering critical section");
 			S.V();
 			lock.acquire();
-			System.out.println(KThread.currentThread().getName()+" acquiring lock and entering critical section");
+			System.out.println(KThread.currentThread().getName()+" acquiring lock1 and entering critical section");
 			sharedData2=sharedData2+1;
 			System.out.println("shared data value: "+sharedData2);
 			KThread.currentThread().yield();
+			System.out.println(KThread.currentThread().getName()+" releasing lock1 and exiting critical section");
 			lock.release();
+			System.out.println(KThread.currentThread().getName()+" releasing lock3 and exiting critical section");
 			lock3.release();
-			System.out.println(KThread.currentThread().getName()+" releasing lock and exiting critical section");
+			
 		}
 	}
 	
+	private static class AcessSharedData321 implements Runnable {
+		AcessSharedData321() { }
 
+		public void run() {
+			S.V();
+			lock3.acquire();
+			System.out.println(KThread.currentThread().getName()+" acquiring lock3 and entering critical section");
+			lock2.acquire();
+			System.out.println(KThread.currentThread().getName()+" acquiring lock2 and entering critical section");
+			lock.acquire();
+			System.out.println(KThread.currentThread().getName()+" acquiring lock1 and entering critical section");
+			sharedData2=sharedData2+1;
+			System.out.println("shared data value: "+sharedData2);
+			KThread.currentThread().yield();
+			System.out.println(KThread.currentThread().getName()+" releasing lock1 and exiting critical section");
+			lock.release();
+			System.out.println(KThread.currentThread().getName()+" releasing lock2 and exiting critical section");
+			lock2.release();
+			System.out.println(KThread.currentThread().getName()+" releasing lock3 and exiting critical section");
+			lock3.release();
+			
+		}
+	}
+	
 	private static class simpleThread implements Runnable {
 		simpleThread() { }
 
@@ -112,8 +142,8 @@ public class LockTest {
 	    boolean oldInterrupStatus = Machine.interrupt().disable();
 	    ThreadedKernel.scheduler.setPriority(t1, 8);
 	    ThreadedKernel.scheduler.setPriority(t2, 10);
-	    ThreadedKernel.scheduler.setPriority(t3, 2);
-	    ThreadedKernel.scheduler.setPriority(t4, 2);
+	    ThreadedKernel.scheduler.setPriority(t3, 6);
+	    ThreadedKernel.scheduler.setPriority(t4, 4);
 	    Machine.interrupt().restore(oldInterrupStatus);
 		t1.fork();
 		S.P();
@@ -175,7 +205,7 @@ public class LockTest {
 		//KThread.yield(); // set lastScheduled
 
 		KThread L = new KThread(new AcessSharedData()).setName("L");
-		KThread M = new KThread(new AcessSharedData2()).setName("M");
+		KThread M = new KThread(new AcessSharedData21()).setName("M");
 		KThread H = new KThread(new AcessSharedData2()).setName("H");
 	
 
@@ -200,6 +230,112 @@ public class LockTest {
 
 	}
 	
+	
+	public static void simpleTest4() {
+		System.out.println("-----------AcessSharedData------------------");
+		//KThread.yield(); // set lastScheduled
+
+		KThread L = new KThread(new AcessSharedData()).setName("L");
+		KThread M = new KThread(new AcessSharedData()).setName("M");
+		KThread H = new KThread(new AcessSharedData21()).setName("H");
+		KThread H1 = new KThread(new AcessSharedData2()).setName("H1");
+
+	    boolean oldInterrupStatus = Machine.interrupt().disable();
+	    ThreadedKernel.scheduler.setPriority(L, 8);
+	    ThreadedKernel.scheduler.setPriority(M, 6);
+	    ThreadedKernel.scheduler.setPriority(H, 4);
+	    ThreadedKernel.scheduler.setPriority(H1, 3);
+	    
+	    Machine.interrupt().restore(oldInterrupStatus);
+		
+	    L.fork();
+	    S.P();
+	    M.fork();
+		S.P();
+	    H.fork();
+	    S.P();
+	    H1.fork();
+	    //KThread.yield();
+	     
+	    H1.join();
+		
+
+	}
+	
+	public static void simpleTest5() {
+		System.out.println("-----------AcessSharedData------------------");
+		//KThread.yield(); // set lastScheduled
+
+		KThread L = new KThread(new AcessSharedData()).setName("L");
+		KThread M = new KThread(new AcessSharedData()).setName("M");
+		KThread H = new KThread(new AcessSharedData321()).setName("H");
+		KThread H1 = new KThread(new AcessSharedData2()).setName("H1");
+		KThread H2 = new KThread(new AcessSharedData3()).setName("H2");
+		KThread H3 = new KThread(new AcessSharedData3()).setName("H3");
+		
+	    boolean oldInterrupStatus = Machine.interrupt().disable();
+	    ThreadedKernel.scheduler.setPriority(L, 8);
+	    ThreadedKernel.scheduler.setPriority(M, 6);
+	    ThreadedKernel.scheduler.setPriority(H, 5);
+	    ThreadedKernel.scheduler.setPriority(H1, 3);
+	    ThreadedKernel.scheduler.setPriority(H2, 2);
+	    ThreadedKernel.scheduler.setPriority(H3, 1);
+	    
+	    Machine.interrupt().restore(oldInterrupStatus);
+		
+	    L.fork();
+	    S.P();
+	    M.fork();
+		S.P();
+	    H.fork();
+	    S.P();
+	    H1.fork();
+	    S.P();
+	    H2.fork();
+	    S.P();
+	    H3.fork();
+	    //KThread.yield();
+	     
+	    H1.join();
+		
+
+	}
+	
+	public static void simpleTest6() {
+		System.out.println("-----------AcessSharedData------------------");
+		//KThread.yield(); // set lastScheduled
+
+		KThread L = new KThread(new AcessSharedData()).setName("L");
+		KThread M = new KThread(new AcessSharedData()).setName("M");
+		KThread H = new KThread(new AcessSharedData321()).setName("H");
+		KThread H1 = new KThread(new AcessSharedData2()).setName("H1");
+		KThread H2 = new KThread(new AcessSharedData3()).setName("H2");
+		
+	    boolean oldInterrupStatus = Machine.interrupt().disable();
+	    ThreadedKernel.scheduler.setPriority(L, 8);
+	    ThreadedKernel.scheduler.setPriority(M, 6);
+	    ThreadedKernel.scheduler.setPriority(H, 4);
+	    ThreadedKernel.scheduler.setPriority(H1, 2);
+	    ThreadedKernel.scheduler.setPriority(H2, 3);
+	    
+	    Machine.interrupt().restore(oldInterrupStatus);
+		
+	    L.fork();
+	    S.P();
+	    M.fork();
+		S.P();
+	    H.fork();
+	    S.P();
+	    H1.fork();
+	    S.P();
+	    H2.fork();
+	    
+	    //KThread.yield();
+	     
+	    H2.join();
+		
+
+	}
 	
 	static Lock lock = new Lock();
 	static Lock lock2 = new Lock();

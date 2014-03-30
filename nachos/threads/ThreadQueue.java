@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.LinkedList;
+
 /**
  * Schedules access to some sort of resource with limited access constraints. A
  * thread queue can be used to share this limited access among multiple
@@ -90,8 +92,10 @@ public abstract class ThreadQueue {
      * 			returned from <tt>nextThread()</tt>.
      */
     public abstract void acquire(KThread thread);
-    
+    public abstract int getMaxThreadPriority();
     public abstract void reorderPriorityQueue();
+    public abstract void ChangeLockOwnerOfWaitingThreadsTo(KThread newLockOwner);
+    public abstract LinkedList<Integer> getThreadIdsOfLock();
     /**
      * Print out all the threads waiting for access, in no particular order.
      */

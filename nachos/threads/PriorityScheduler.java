@@ -2,6 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -129,7 +130,13 @@ public class PriorityScheduler extends Scheduler {
 	PriorityQueue(boolean transferPriority) {
 	    this.transferPriority = transferPriority;
 	}
-
+	  public int getMaxThreadPriority(){
+	    	return -1;
+	    }
+		public void ChangeLockOwnerOfWaitingThreadsTo(KThread newLockOwner){}
+		 public LinkedList<Integer> getThreadIdsOfLock(){
+			 return null;
+		 };
 	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).waitForAccess(this);

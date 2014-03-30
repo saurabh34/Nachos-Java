@@ -36,7 +36,14 @@ public class RoundRobinScheduler extends Scheduler {
 	 *
 	 * @param	thread	the thread to append to the queue.
 	 */    
-	public void waitForAccess(KThread thread) {
+     public int getMaxThreadPriority(){
+    	    	return -1;
+      }
+ 	public void ChangeLockOwnerOfWaitingThreadsTo(KThread newLockOwner){}
+	 public LinkedList<Integer> getThreadIdsOfLock(){
+		 return null;
+	 };
+    	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 		       
 	    waitQueue.add(thread);

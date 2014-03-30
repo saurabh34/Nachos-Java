@@ -1,7 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
+import java.util.*;
 
 
 /**
@@ -434,7 +434,7 @@ public class KThread {
 		ThreadedKernel.scheduler.setPriority(currentThread, 1); // max for main thread
 		Machine.interrupt().restore(intStatus);
   	
-     	LockTest.simpleTest2();
+     	LockTest.simpleTest5();
         currentThread.yield();   //yield main thread so that rest of threads can run
        
     }
@@ -479,7 +479,7 @@ public class KThread {
      * Unique identifer for this thread. Used to deterministically compare
      * threads.
      */
-    private int id = numCreated++;
+    public int id = numCreated++;
     /** Number of times the KThread constructor was called. */
     private static int numCreated = 0;
  
@@ -490,7 +490,9 @@ public class KThread {
     private Semaphore waitOnThisThread = new Semaphore(0);
     public int inherentPriority;
     public int originalPriority;
-    public KThread donatedPriorityThread;
-    public KThread ReceivedPriorityThread;
+    public KThread donatedPriorityThread=null;
+    //public KThread ReceivedPriorityThread=null;
     public KThread WaitingOnlockThread=null;
+    public HashMap<Integer,KThread> ReceivedPriorityThreads=new HashMap<Integer,KThread>();
+    
 }

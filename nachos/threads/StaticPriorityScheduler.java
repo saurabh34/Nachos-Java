@@ -173,6 +173,10 @@ public class StaticPriorityScheduler extends Scheduler {
 	    this.transferPriority = transferPriority;
 	}
 
+	public void ChangeLockOwnerOfWaitingThreadsTo(KThread newLockOwner){}
+	 public LinkedList<Integer> getThreadIdsOfLock(){
+		 return null;
+	 };
 	public void waitForAccess(KThread thread) {
 	    Lib.assertTrue(Machine.interrupt().disabled());
 	    getThreadState(thread).waitForAccess(this);
@@ -282,14 +286,14 @@ public class StaticPriorityScheduler extends Scheduler {
     	      LinkedList<KThread> priorityLevelThreads=entry.getValue();
     	      //System.out.println("priorityLevelThreads.size()== "+priorityLevelThreads.size());
     	      Iterator<KThread> iter= priorityLevelThreads.iterator();
-    	      int numOfThreadsRemoved=0;
+    	      
     	      while(iter.hasNext()){
     	    	  KThread thread=iter.next();
     	    	  if (getThreadState(thread).getPriority() != thread.inherentPriority){
     	    		  getThreadState(thread).priority=thread.inherentPriority;
     	    		  tempThreads.add(thread);
     	    		  iter.remove();
-    	    		  numOfThreadsRemoved++;
+    	    		 
     	    	  }
     	       }
     	      
@@ -317,11 +321,15 @@ public class StaticPriorityScheduler extends Scheduler {
     	
     }
 	
+    public int getMaxThreadPriority(){
+    	return -1;
+    }
 	/**
 	 * <tt>true</tt> if this queue should transfer priority from waiting
 	 * threads to the owning thread.
 	 */
-	public boolean transferPriority;
+   
+    public boolean transferPriority;
 	//create the priority queue
 	private TreeMap<Integer,LinkedList<KThread>> priorityWaitQueue=new TreeMap<Integer,LinkedList<KThread>>();
    
@@ -353,7 +361,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 * @return	the priority of the associated thread.
 	 */
 	public int getPriority() {
-	    return this.thread.inherentPriority;
+	    return priority;
 	}
 
 	/**
@@ -363,7 +371,7 @@ public class StaticPriorityScheduler extends Scheduler {
 	 */
 	public int getEffectivePriority() {
 
-	    return this.thread.inherentPriority;
+	    return priority;
 	}
 
 	/**
@@ -428,7 +436,7 @@ public class StaticPriorityScheduler extends Scheduler {
 
 		
 	}
-
+	
 	/** The thread with which this object is associated. */	   
 	protected KThread thread;
 	/** The priority of the associated thread. */
